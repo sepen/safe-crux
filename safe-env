@@ -1,0 +1,199 @@
+#!/bin/bash
+#
+# Copyright (c) 2007
+#   by Jose V Beneyto, <sepen@crux.nu>
+#   and Victor Martinez, <pitillo@ono.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+msgError() {
+  echo "Error, $@" 2>&1
+  exit 1
+}
+
+msgVersion() {
+  echo "$APPNAME v$APPVERSION"
+  echo "Copyright (c) 2008 by Jose V Beneyto and Victor Martinez"
+  exit 0
+}
+
+msgUsage() {
+  echo "Usage: $APPNAME subcommand <arguments>"
+  echo "Where options are:"
+  echo "  help          Show this information"
+  echo "  version       Show version information"
+  echo "  stat          Show status for mounted images"
+  echo "  init          Create a new environment with core filesystem"
+  echo "  use image     Use the filesystem image as the environment"
+  echo "  mount image   Mount the selected image as the environment"
+  echo "  umount image  Umount the environment"
+  exit 0
+}
+
+checkMD5() {
+  local md5_file="$1"
+  cd $ISODIR && md5sum -c $1 >/dev/null 2>&1 || msgError "md5sum differs"
+}
+
+checkUID() {
+  [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
+}
+
+envInit() {
+  echo "+ Starting $APPNAME ..."
+  local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
+  local source_version="2.6"
+  [ ! -z $SOURCE_ISO_VERSION ] && source_version="$SOURCE_ISO_VERSION"
+  local source_iso="ftp://ftp.sh.cvut.cz/MIRRORS/crux/crux-$source_version/iso/crux-$source_version.iso"
+  local source_md5="ftp://ftp.sh.cvut.cz/MIRRORS/crux/crux-$source_version/iso/crux-$source_version.md5"
+  [ ! -z $SOURCE_ISO_FILE ] && source_iso="$SOURCE_ISO_FILE"
+  [ ! -z $SOURCE_MD5_FILE ] && source_md5="$SOURCE_MD5_FILE"
+  local file_iso="$ISODIR/${source_iso##*/}"
+  local file_md5="$ISODIR/${source_md5##*/}"
+  [ ! "$(type -p wget)" ] && msgError "command 'wget' not found"
+  [ ! -f $file_iso ] && wget $wget_options $source_iso
+  [ ! -f $file_md5 ] && wget $wget_options $source_md5
+  echo "+ Checking md5sum ..."
+  checkMD5 $file_md5
+  echo "+ Checking for existing images ..."
+  local answer="n"
+  local image="core"
+  local imgfile="$IMGDIR/$image"
+  if [ -f $imgfile ]; then
+    read -p "File '$imgfile' found, do you want to remove it [y|n] " answer
+    [ "$answer" == "y" ] && rm -vf $imgfile
+  fi
+  echo "+ Getting some space for the filesystem image. Please wait ..."
+  local imgsize="500000" # 512M
+  [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
+  dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
+  echo "+ Formating the filesystem image ..."
+  local imgfstype="reiserfs"
+  [ ! -z $IMAGE_FSTYPE ] && imgfstype=$IMAGE_FSTYPE
+  mkfs -t $imgfstype -q $imgfile 2>/dev/null
+  envMount $image
+  rm -rf $MNTDIR/lost+found
+  echo "+ Mounting the iso image ..."
+  mount -o loop -t iso9660 $file_iso $ISODIR/mnt
+  echo "+ Doing the fakesetup ..."
+  local pkgsdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
+  [ ! -d $pkgsdir ] && pkgsdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
+  local pkgadd_bin=/usr/bin/pkgadd
+  if [ ! -f $pkgadd_bin ]; then
+    pkgadd_bin=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
+    if [ ! -f $pkgadd_bin ]; then
+      tar -C $TMPDIR -xzf $pkgsdir/pkgutils* usr/bin/pkgadd
+      pkgadd_bin=$TMPDIR/usr/bin/pkgadd
+      if [ ! -f $pkgadd_bin ]; then
+        msgError "can't find pkgadd binary in '$pkgadd_bin'"
+      fi
+    fi
+  fi
+  sh $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
+  echo "+ Installing more addons ..."
+  install -D -m 0644 /etc/resolv.conf $MNTDIR/etc/resolv.conf
+  install -D -m 0644 /etc/hosts $MNTDIR/etc/hosts
+  install -D -m 0755 $ADDDIR/bin/prt-clean $MNTDIR/opt/bin/prt-clean
+  install -D -m 0755 $ADDDIR/bin/fakelogin $MNTDIR/opt/bin/fakelogin
+  install -D -m 0655 $ADDDIR/man/prt-clean.1 $MNTDIR/opt/man/man1/prt-clean.1
+  install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $MNTDIR/opt/doc/handbook.txt
+  echo "+ Unmounting the iso image ..."
+  umount $ISODIR/mnt
+  envUmount $image
+}
+
+envMount() {
+  local imgfile="$1"
+  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
+  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  echo "+ Mounting the filesystem image ..."
+  [ ! -f "$imgfile" ] && msgError "can't find image file '$imgfile'"
+  [ "$imgmnt" != "" ] && msgError "$imgmnt image filesystem is yet mounted"
+  mount -o loop $imgfile $MNTDIR
+}
+
+envUse() {
+  envMount $@
+  $BINDIR/chrooted $MNTDIR /opt/bin/fakelogin
+  envUmount $@
+}
+
+envUmount() {
+  local imgfile="$1"
+  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
+  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  echo "+ Unmounting the filesystem image ..."
+  [ ! -f "$imgfile" ] && msgError "can't find image file '$imgfile'"
+  [ "$imgmnt" == "" ] && msgError "$imgfile image filesystem is not yet mounted"
+  umount $MNTDIR
+}
+
+envStat() {
+  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  echo "+ Status of filesystem images"
+  if [ "$imgmnt" != "" ]; then
+    echo "$imgmnt image mounted"
+  else
+    echo "no images mounted"
+  fi
+}
+
+main() {
+  if [ $# -eq 1 ]; then
+    case $1 in
+      init) checkUID; envInit ;;
+      stat) envStat ;;
+      version) msgVersion ;;
+      *) msgUsage ;;
+    esac
+  elif [ $# -eq 2 ]; then
+    case $1 in
+      use) checkUID; shift 1; envUse $@ ;;
+      mount) checkUID; shift 1; envMount $@ ;;
+      umount) checkUID; shift 1; envUmount $@ ;;
+      *) msgUsage ;;
+    esac
+  else
+    msgUsage
+  fi
+}
+
+# some environment variables
+export LANG=C
+export PATH=$PATH:/sbin:/usr/sbin
+
+# some global variables
+APPNAME="$(basename $0)"
+APPVERSION="0.1.2"
+BASEDIR="$(cd $(dirname $0); pwd)"
+TMPDIR="/tmp"
+ISODIR="$BASEDIR/iso"
+MNTDIR="$BASEDIR/mnt"
+IMGDIR="$BASEDIR/img"
+BINDIR="$BASEDIR/bin"
+ETCDIR="$BASEDIR/etc"
+ADDDIR="$BASEDIR/addons"
+
+# load config vars
+[ -f "$ETCDIR/$APPNAME.conf" ] && . $ETCDIR/$APPNAME.conf
+
+# call the main rutine
+main $@
+
+# End of file

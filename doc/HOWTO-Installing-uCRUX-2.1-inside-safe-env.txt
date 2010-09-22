@@ -1,0 +1,54 @@
+*******************************************************************************
+ HOWTO Installing uCRUX-2.1 inside safe-env
+*******************************************************************************
+
+
+[0] - Prepare the environment
+[1] - Create the environment
+[2] - Finish the installation
+[3] - Upgrade the system
+
+
+
+[0] - Prepare the environment
+
+$ vim etc/safe-env.conf (select ucrux-2.1)
+
+
+[1] - Create the environment
+
+$ sudo ./safe-env init
+$ mv img/core img/ucrux-2.1
+
+
+[2] - Finish the installation
+
+$ sudo mount -o loop -t iso9660 iso/ucrux-2.1.iso iso/mnt
+$ sudo ./safe-env mount ucrux-2.1
+$ sudo tar -C mnt/usr/src -xvjf iso/mnt/crux/kernel/linux-2.6.11.7.tar.bz2
+$ sudo ln -sf linux-2.6.11.7 mnt/usr/src/linux
+$ sudo cp iso/mnt/crux/kernel/linux-2.6.11.7.config mnt/usr/src/linux/.config
+$ for pkg in iso/mnt/crux/opt/openssl#0.9.7g-1.pkg.tar.gz \
+             iso/mnt/crux/opt/ports#1.5-1.pkg.tar.gz \
+             iso/mnt/crux/contrib/httpup#0.4.0a-1.pkg.tar.gz \
+             iso/mnt/crux/contrib/curl#7.13.2-2.pkg.tar.gz \
+             iso/mnt/crux/contrib/prt-get#0.5.9-1.pkg.tar.gz; do \
+    sudo iso/mnt/usr/bin/pkgadd -r mnt $pkg; \
+  done
+$ sudo sed -e '/\/usr\/X11R6\/lib/d' -i mnt/etc/ld.so.conf
+$ sudo sed -e '/# PKGMK_WORK_DIR=\"\$PWD/ s//PKGMK_WORK_DIR=\"\/tmp/' \
+           -i mnt/etc/pkgmk.conf 
+$ sudo sed -e 's|/usr/ports/core|/usr/ports/base|' -e '/\/usr\/ports\/xorg/d' \
+           -e 's|#prtdir /usr/ports/contrib|prtdir /usr/ports/contrib|' \
+           -i /opt/etc/prt-get.conf
+$ sudo ./safe-env umount ucrux-2.1
+$ sudo umount iso/mnt
+
+
+[3] - Upgrade the system
+
+$ sudo ./safe-env use ucrux-2.1
+$ ports -u
+$ prt-get sysup
+$ exit
+

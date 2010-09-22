@@ -1,0 +1,45 @@
+.TH safe-env 1 LOCAL
+
+.SH NAME
+
+safe-env - Safe Environment for building and testing CRUX ports
+
+.SH SYNOPSIS
+
+.B safe-env
+.RB subcommand
+.RB <arguments>
+
+.SH SUBCOMMANDS
+
+.TP 13
+.B help
+Show help information
+.TP 13
+.B stat
+Show status for mounted images
+.TP 13
+.B init
+Create a new environment with core filesystem"
+.TP 7
+.B use
+.IR image
+Use the filesystem image as the environment
+.TP 7
+.B mount
+.IR image
+Mount the filesystem image
+.TP 7
+.B umount
+.IR image
+Umount the filesystem image
+
+.SH AVAILABILITY
+
+Teorically all Linux flavors.
+
+.SH AUTHORS
+
+Jose V Beneyo, <sepen@crux.nu> 
+.br
+Victor Martinez, <pitillo@ono.com>

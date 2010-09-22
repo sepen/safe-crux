@@ -1,0 +1,42 @@
+#!/bin/bash
+
+msgUsage() {
+  echo "Usage: $0 path <command>"
+  echo "Note that default command executed is /bin/sh"
+  exit 0
+}
+
+msgError() {
+  echo "Error, $@" 2>&1
+  exit 1
+}
+
+main() {
+  local FS
+  for FS in dev tmp proc sys; do
+    if [ $(mount | grep $CHROOTFS/$FS | wc -l) -eq 0 ]; then
+      case $FS in
+        dev|tmp) mount --bind /$FS $CHROOTFS/$FS ;;
+        proc) mount -t $FS $FS $CHROOTFS/$FS ;;
+        sys) mount -t sysfs none $CHROOTFS/$FS ;;
+      esac
+    fi
+  done
+  chroot $CHROOTFS $@
+  #for FS in dev tmp proc sys; do
+  for FS in dev proc sys; do
+    if [ $(mount | grep $CHROOTFS/$FS | wc -l) -gt 0 ]; then
+      umount $CHROOTFS/$FS
+    fi
+  done
+}
+
+[ $# -lt 1 ] && msgUsage
+[ ! -d $1 ] && msgError "directory '$1' not found"
+
+CHROOTFS="$(cd $1; pwd)"
+
+shift 1
+main $@
+
+# End of File

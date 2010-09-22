@@ -1,0 +1,49 @@
+.TH prt-clean 1 LOCAL
+
+.SH NAME
+
+prt-clean - Make snapshots of installed ports and removes differences to keep a clean system.
+
+.SH SYNOPSIS
+
+.B prt-clean
+.RB subcommand
+.RB <arguments>
+
+.SH SUBCOMMANDS
+
+.TP 13
+.B help
+Shows help information
+.TP 13
+.B version
+Shows version information
+.TP 13
+.B list
+List all stored snapshots
+.TP 13
+.B clean
+Remove all stored snapshots
+.TP 9 
+.B store
+.IR msg
+Store a snapshot of installed ports
+.TP 9
+.B restore
+.IR num
+Restore to stored snapshot number
+.TP 9
+.B diff
+.IR num
+Show differences with the current state
+
+.SH AVAILABILITY
+CRUX
+
+.SH AUTHORS
+
+Victor Martinez, <pitillo@ono.com>
+.br
+Jose V Beneyo, <sepen@crux.nu>
+
+

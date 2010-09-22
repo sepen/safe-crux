@@ -1,0 +1,29 @@
+
+TODO
+
+
+[documentation]
+
+  - add more contents and info to the README file
+
+  - write more documents:
+
+    - howto get running your first image
+    - howto resize your image
+    - howto developing ports inside the safe environment
+
+  - improve man files for safe-env and prt-clean
+
+  - write a skeleton file for HOWTO's
+
+
+[installation]
+
+  - create a Makefile for installations like this:
+
+    /usr/bin/safe-env
+    /usr/etc/safe-env.conf
+    /usr/share/safe-env/SYSTEM_STUFF...
+    ~/.safe-env.conf
+    ~/.safe-env/USER_STUFF
+

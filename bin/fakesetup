@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# fakesetup: Start a fake setup installation. Useful for chroot installations.
+#
+
+msgUsage() {
+  echo "Usage: $0 ORIG DEST <options>"
+  echo "Where options are:"
+  echo "   -y|--yes            Ask yes to all questions"
+  echo "   --with-pkgadd=FILE  use FILE as alternative pkgadd binary"
+  exit 0
+}
+
+msgError() {
+  echo "Error, $@" 2>&1
+  exit 1
+}
+
+main() {
+  # adjust the pkg database
+  if [ ! -d $DESTDIR/var/lib/pkg ]; then
+    echo "+ Initializating package database..."
+    install -d -m 0755 $DESTDIR/var/lib/pkg
+    touch $DESTDIR/var/lib/pkg/db
+  fi
+  if [ -d $DESTDIR/var/lib/pkg/rejected ]; then
+    echo "+ Removing rejected file from package database stuff..."
+    rm -rf $DESTDIR/var/lib/pkg/rejected
+  fi
+  # install packages
+  for pkg in $(find $PKGSDIR -type f -name '*.pkg.tar.gz'); do
+    echo -ne "+ Installing $(basename $pkg) -> $DESTDIR "
+    $PKGADD -r $DESTDIR $pkg && echo " DONE."
+  done
+}
+
+[ $# -lt 2 ] && msgUsage
+[ $# -gt 3 ] && msgUsage
+
+[ ! -d "$1" ] && msgError "'$1' is not a path"
+[ ! -d "$2" ] && msgError "'$2' is not a path"
+
+PKGSDIR=$1
+DESTDIR=$2
+
+[ $# -eq 3 ] && OPTIONS=$3
+
+FORCE="n"
+PKGADD="/usr/bin/pkgadd"
+
+case $OPTIONS in
+  -y|--yes) FORCE="y" ;;
+  --with-pkgadd=*) PKGADD="${OPTIONS##*=}" ;;
+  *) msgUsage ;;
+esac
+  
+[ ! -f $PKGADD ] && msgError "can't find pkgadd command in '$PKGADD'"
+
+if [ "$FORCE" != "y" ]; then
+  read -p "Do you want to fakesetup the following dir: $DESTDIR ? [y|n] " answer
+  [ "$answer" == "y" ] && main
+else
+  main
+fi
+
+# End of file

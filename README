@@ -1,0 +1,17 @@
+
+README
+
+  Welcome to safe-env: A clean and minimal CRUX enviroment.
+  
+  Sorry, until some information notes will be placed, you can read doc/* files.
+
+  Please contact the authors to report bugs.
+  Before reporting a bug try to be sure you have the lastest source available.
+  Feel free to add all the info you think can be usefull, and of course you can
+  provide a patch or the way to solve a bug.
+
+
+AUTHORS
+
+  Jose V Beneyto, <sepen@crux.nu>
+  Victor Martinez, <pitillo@ono.com>

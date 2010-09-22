@@ -1,0 +1,59 @@
+#############################################################################
+ HOWTO Running sshd in a jail using safe-env
+#############################################################################
+
+
+[0] - Preparing the first image
+[1] - Making the script
+[2] - Adding the user wich will use the chroot enviroment
+[3] - Testing the configuration
+[4] - Using it for more users
+
+
+[0] - Preparing the first image
+
+- First we need to provide an image that will be used by the user. We need
+to start safe-env and follow the general steps to prepare the enviroment.
+$ sudo safe-env init
+
+(inside the enviroment we need to make the ports -u and prt-get sysup to 
+have an up-to-date enviroment, when it had finished, we can exit and take
+a look to /path_to_safe-env/img/core, wich will be our up-to-date image 
+that will be used by users at first login)
+
+- At this point we can copy the entire /path_to_safe-env/ to another path
+that will be called from the script used like the user default shell.
+
+
+[1] - Making the script
+
+- We need to create a little script wich will be used by default user's shell.
+- It can be named safe.sh and it will contain:
+
+  [CODE]
+  #!/bin/bash
+  #
+  # Script to launch safe-env
+  #
+  sudo /path/to/safe-env use core # change to your binary path
+  [/CODE]
+
+
+[2] - Adding the user wich will use the chroot enviroment
+
+- We need to check /etc/passwd at your user's default shell to point the 
+script we had created before.
+
+
+[3] - Testing the configuration (OBVIOUS and this can be removed)
+
+- We can use the normal "su user" to test if the chroot enviroment was well
+loaded.
+- Another option is to try to login by ssh.
+
+
+[4] - Using it for more users
+
+- If we want to use this enviroment by more users, we need to copy the entire
+/path_to_safe-env/ to the new user's path, and change the script to call this
+new path.
