@@ -1,0 +1,59 @@
+
+HOWTO - Resize your image
+
+
+Some filesystem require that the filesystem to resize is not mounted
+before start the resize procedure.
+$ sudo umount mnt/
+
+Also you should check the filesystem integrity for the image
+$ sudo /sbin/e2fsck -f img/core
+
+
+
+Then you can resize the image depending on the filesystem:
+
+
+  EXT2/EXT3/EXT4
+
+    Unless you have patched your kernel with the ext2online patch it is
+    necessary to unmount the file system before resizing it.
+    $ sudo /sbin/resize2fs img/core 2G
+
+    And if you want to shrink the filesystem to its minimum size
+    $ sudo /sbin/resize2fs -M img/core
+
+    On Centos5 (and maybe others) you should use resize4fs for -M option
+    Versions are:
+      resize2fs: 1.39
+      resize4fs: 1.41.9
+
+
+  REISERFS
+
+    Reiserfs file systems can be resized when mounted or unmounted as you prefer:
+    $ sudo resize_reiserfs img/core
+
+
+  XFS
+
+    XFS file systems must be mounted to be resized and the mount-point is specified
+    rather than the device name.
+    $ sudo xfs_growfs mnt/
+
+
+  JFS
+
+    Like XFS, file system must be mounted to be resized and the mount-point
+    is specified rather than the device name.
+
+    You need at least Version 1.0.21 of the jfs-utils to do this.
+    $ sudo mount -o remount,resize mnt/
+
+    Some kernel versions have problems with this syntax (2.6.0 is known to have
+    this problem). In this case you have to explicitly specify the new size of
+    the filesystem in blocks. This is extremely error prone as you must know the
+    blocksize of your filesystem and calculate the new size based on those units.
+    Example: If you were to resize a JFS file system to 4 gigabytes that has 4k
+    blocks, you would write:
+    $ sudo mount -o remount,resize=1048576 mnt/              
