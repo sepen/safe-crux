@@ -56,4 +56,4 @@ Then you can resize the image depending on the filesystem:
     blocksize of your filesystem and calculate the new size based on those units.
     Example: If you were to resize a JFS file system to 4 gigabytes that has 4k
     blocks, you would write:
-    $ sudo mount -o remount,resize=1048576 mnt/              
+    $ sudo mount -o remount,resize=1048576 mnt/
