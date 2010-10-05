@@ -105,7 +105,7 @@ envInit() {
       msgError "can't find pkgadd binary in '$pkgadd_bin'"
     fi
   fi
-  sh -x $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
+  sh $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
   echo "+ Installing more addons ..."
   install -D -m 0644 /etc/resolv.conf $MNTDIR/etc/resolv.conf
   install -D -m 0644 /etc/hosts $MNTDIR/etc/hosts
