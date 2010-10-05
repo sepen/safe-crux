@@ -2,13 +2,22 @@
 README
 
   Welcome to safe-env: A clean and minimal CRUX enviroment.
-  
+
   Sorry, until some information notes will be placed, you can read doc/* files.
 
   Please contact the authors to report bugs.
   Before reporting a bug try to be sure you have the lastest source available.
   Feel free to add all the info you think can be usefull, and of course you can
   provide a patch or the way to solve a bug.
+
+
+REQUERIMENTS
+
+  You need internet access, if not then you should place the iso and md5sum
+  you selected in etc/safe-env.conf into the ./iso directory
+
+  Also you need a linux kernel greater or equal than 2.6.27 to use versions of
+  CRUX's iso greater or equal than CRUX 2.6
 
 
 AUTHORS

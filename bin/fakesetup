@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # fakesetup: Start a fake setup installation. Useful for chroot installations.
 #
@@ -28,7 +28,7 @@ main() {
     rm -rf $DESTDIR/var/lib/pkg/rejected
   fi
   # install packages
-  for pkg in $(find $PKGSDIR -type f -name '*.pkg.tar.gz'); do
+  for pkg in $(find $PKGSDIR -type f -name '*.pkg.tar.*'); do
     echo -ne "+ Installing $(basename $pkg) -> $DESTDIR "
     $PKGADD -r $DESTDIR $pkg && echo " DONE."
   done

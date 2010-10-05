@@ -23,8 +23,7 @@ main() {
     fi
   done
   chroot $CHROOTFS $@
-  #for FS in dev tmp proc sys; do
-  for FS in dev proc sys; do
+  for FS in dev tmp proc sys; do
     if [ $(mount | grep $CHROOTFS/$FS | wc -l) -gt 0 ]; then
       umount $CHROOTFS/$FS
     fi

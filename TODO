@@ -1,6 +1,23 @@
 
 TODO
 
+[releases]
+
+  - new version numbers more similar to CRUX's releases:
+    2.7.0 for the first version running CRUX 2.7
+    2.7.1 for next patch or feature for CRUX 2.7
+    2.7.2 for the next one
+    ...
+    2.8.0 for the first version running CRUX 2.8
+    ...
+
+[safe-env]
+
+  - use $MNT_DIR/$IMG_NAME instead of $MNT_DIR for being able to run
+    more than one safe-env (due to 2.7.1)
+
+  - optionally use one directory instead of an image (due to 2.7.2)
+
 
 [documentation]
 
@@ -8,9 +25,8 @@ TODO
 
   - write more documents:
 
-    - howto get running your first image
-    - howto resize your image
-    - howto developing ports inside the safe environment
+    - howto get running your first safe-env, options, etc.
+    - howto fast developing ports inside the safe environment
 
   - improve man files for safe-env and prt-clean
 
@@ -19,11 +35,24 @@ TODO
 
 [installation]
 
-  - create a Makefile for installations like this:
+  - create a Makefile for installations like this: (due to 2.7.1)
 
+    /usr/bin/cse -> /usr/bin/safe-env (alias: Crux Safe Environment)
     /usr/bin/safe-env
     /usr/etc/safe-env.conf
-    /usr/share/safe-env/SYSTEM_STUFF...
+    /usr/man/man8/safe-env.8.gz
+    /usr/share/safe-env/bin/*
+    /usr/share/safe-env/doc/*
+    /usr/share/safe-env/addons/*
+
+    from the script we should try to read first the user config file
+    which is an overlay for configuration variables:
     ~/.safe-env.conf
-    ~/.safe-env/USER_STUFF
+
+    and also the first time we must to create all required directories:
+    ~/.safe-env/mnt
+    ~/.safe-env/iso
+    ~/.safe-env/img
+    ~/.safe-env/doc
+
 

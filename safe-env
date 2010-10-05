@@ -28,21 +28,20 @@ msgError() {
 }
 
 msgVersion() {
-  echo "$APPNAME v$APPVERSION"
-  echo "Copyright (c) 2008 by Jose V Beneyto and Victor Martinez"
+  echo "$APPNAME v$APPVERSION by Jose V Beneyto and Victor Martinez"
   exit 0
 }
 
 msgUsage() {
   echo "Usage: $APPNAME subcommand <arguments>"
   echo "Where options are:"
-  echo "  help          Show this information"
-  echo "  version       Show version information"
-  echo "  stat          Show status for mounted images"
-  echo "  init          Create a new environment with core filesystem"
-  echo "  use image     Use the filesystem image as the environment"
-  echo "  mount image   Mount the selected image as the environment"
-  echo "  umount image  Umount the environment"
+  echo "  help             Show this help information"
+  echo "  version          Show version information"
+  echo "  stat             Show status for mounted images"
+  echo "  init             Create a new environment with core filesystem"
+  echo "  use IMG or FILE  Use the filesystem image as the environment"
+  echo "  mount IMG        Mount the selected image as the environment"
+  echo "  umount IMG       Umount the environment"
   exit 0
 }
 
@@ -58,10 +57,10 @@ checkUID() {
 envInit() {
   echo "+ Starting $APPNAME ..."
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local source_version="2.6"
+  local source_version="2.7"
   [ ! -z $SOURCE_ISO_VERSION ] && source_version="$SOURCE_ISO_VERSION"
-  local source_iso="ftp://ftp.sh.cvut.cz/MIRRORS/crux/crux-$source_version/iso/crux-$source_version.iso"
-  local source_md5="ftp://ftp.sh.cvut.cz/MIRRORS/crux/crux-$source_version/iso/crux-$source_version.md5"
+  local source_iso="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.iso"
+  local source_md5="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.md5"
   [ ! -z $SOURCE_ISO_FILE ] && source_iso="$SOURCE_ISO_FILE"
   [ ! -z $SOURCE_MD5_FILE ] && source_md5="$SOURCE_MD5_FILE"
   local file_iso="$ISODIR/${source_iso##*/}"
@@ -80,7 +79,7 @@ envInit() {
     [ "$answer" == "y" ] && rm -vf $imgfile
   fi
   echo "+ Getting some space for the filesystem image. Please wait ..."
-  local imgsize="500000" # 512M
+  local imgsize="512000" # 512M
   [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
   dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
   echo "+ Formating the filesystem image ..."
@@ -94,18 +93,19 @@ envInit() {
   echo "+ Doing the fakesetup ..."
   local pkgsdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
   [ ! -d $pkgsdir ] && pkgsdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
-  local pkgadd_bin=/usr/bin/pkgadd
+  local pkgadd_bin=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
   if [ ! -f $pkgadd_bin ]; then
-    pkgadd_bin=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
+    local pkgutils_pkg=$(find $pkgsdir -type f -name 'pkgutils#*' -exec basename {} \;)
+    case $pkgutils_pkg in
+      *.xz) pkgutils_pkg=$(find $ISODIR/mnt/tools -type f -name 'pkgutils#*') ;;
+    esac
+    tar -C $TMPDIR -xzf $pkgutils_pkg usr/bin/pkgadd
+    pkgadd_bin=$TMPDIR/usr/bin/pkgadd
     if [ ! -f $pkgadd_bin ]; then
-      tar -C $TMPDIR -xzf $pkgsdir/pkgutils* usr/bin/pkgadd
-      pkgadd_bin=$TMPDIR/usr/bin/pkgadd
-      if [ ! -f $pkgadd_bin ]; then
-        msgError "can't find pkgadd binary in '$pkgadd_bin'"
-      fi
+      msgError "can't find pkgadd binary in '$pkgadd_bin'"
     fi
   fi
-  sh $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
+  sh -x $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
   echo "+ Installing more addons ..."
   install -D -m 0644 /etc/resolv.conf $MNTDIR/etc/resolv.conf
   install -D -m 0644 /etc/hosts $MNTDIR/etc/hosts
@@ -180,7 +180,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # some global variables
 APPNAME="$(basename $0)"
-APPVERSION="0.1.2"
+APPVERSION="2.7.0"
 BASEDIR="$(cd $(dirname $0); pwd)"
 TMPDIR="/tmp"
 ISODIR="$BASEDIR/iso"
