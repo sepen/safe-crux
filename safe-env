@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2007
+# Copyright (c) 2007 - 2011
 #   by Jose V Beneyto, <sepen@crux.nu>
 #   and Victor Martinez, <pitillo@ono.com>
 #
@@ -72,8 +72,8 @@ envInit() {
   checkMD5 $file_md5
   echo "+ Checking for existing images ..."
   local answer="n"
-  local image="core"
-  local imgfile="$IMGDIR/$image"
+  local imgname="core"
+  local imgfile="$IMGDIR/$imgname"
   if [ -f $imgfile ]; then
     read -p "File '$imgfile' found, do you want to remove it [y|n] " answer
     [ "$answer" == "y" ] && rm -vf $imgfile
@@ -86,7 +86,7 @@ envInit() {
   local imgfstype="reiserfs"
   [ ! -z $IMAGE_FSTYPE ] && imgfstype=$IMAGE_FSTYPE
   mkfs -t $imgfstype -q $imgfile 2>/dev/null
-  envMount $image
+  envMount $imgfile
   rm -rf $MNTDIR/lost+found
   echo "+ Mounting the iso image ..."
   mount -o loop -t iso9660 $file_iso $ISODIR/mnt
@@ -105,50 +105,70 @@ envInit() {
       msgError "can't find pkgadd binary in '$pkgadd_bin'"
     fi
   fi
-  sh $BINDIR/fakesetup $pkgsdir $MNTDIR --with-pkgadd=$pkgadd_bin
+  sh $BINDIR/fakesetup $pkgsdir $MNTDIR/$imgname --with-pkgadd=$pkgadd_bin
   echo "+ Installing more addons ..."
-  install -D -m 0644 /etc/resolv.conf $MNTDIR/etc/resolv.conf
-  install -D -m 0644 /etc/hosts $MNTDIR/etc/hosts
-  install -D -m 0755 $ADDDIR/bin/prt-clean $MNTDIR/opt/bin/prt-clean
-  install -D -m 0755 $ADDDIR/bin/fakelogin $MNTDIR/opt/bin/fakelogin
-  install -D -m 0655 $ADDDIR/man/prt-clean.1 $MNTDIR/opt/man/man1/prt-clean.1
-  install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $MNTDIR/opt/doc/handbook.txt
+  install -D -m 0644 /etc/resolv.conf $MNTDIR/$imgname/etc/resolv.conf
+  install -D -m 0644 /etc/hosts $MNTDIR/$imgname/etc/hosts
+  install -D -m 0755 $ADDDIR/bin/prt-clean $MNTDIR/$imgname/opt/bin/prt-clean
+  install -D -m 0755 $ADDDIR/bin/fakelogin $MNTDIR/$imgname/opt/bin/fakelogin
+  install -D -m 0655 $ADDDIR/man/prt-clean.1 $MNTDIR/$imgname/opt/man/man1/prt-clean.1
+  install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $MNTDIR/$imgname/opt/doc/handbook.txt
   echo "+ Unmounting the iso image ..."
   umount $ISODIR/mnt
-  envUmount $image
+  envUmount $imgfile
 }
 
 envMount() {
-  local imgfile="$1"
-  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
-  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
   echo "+ Mounting the filesystem image ..."
-  [ ! -f "$imgfile" ] && msgError "can't find image file '$imgfile'"
-  [ "$imgmnt" != "" ] && msgError "$imgmnt image filesystem is yet mounted"
-  mount -o loop $imgfile $MNTDIR
+  local imgfile="$1"
+  # if path is given
+  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
+  # removes the path prefix of imgfile
+  imgfile="$(basename $imgfile)"
+  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
+  # check if was previously mounted
+  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  [ "$imgmnt" != "" ] && msgError "can't mount '$imgfile', filesystem is yet mounted"
+  # check for directory and mount
+  [ ! -d $MNTDIR/$imgfile ] && install -d $MNTDIR/$imgfile
+  mount -o loop $IMGDIR/$imgfile $MNTDIR/$imgfile
 }
 
 envUse() {
-  envMount $@
-  $BINDIR/chrooted $MNTDIR /opt/bin/fakelogin
-  envUmount $@
+  echo "+ Preparing the filesystem image ..."
+  local imgfile="$1"
+  # if path is given
+  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
+  # removes the path prefix of imgfile
+  imgfile="$(basename $imgfile)"
+  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
+  # mount the filesystem
+  envMount $imgfile
+  # chroot to the new filesystem
+  $BINDIR/chrooted $MNTDIR/$imgfile /opt/bin/fakelogin
+  # umount the filesystem
+  envUmount $imgfile
 }
 
 envUmount() {
-  local imgfile="$1"
-  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
-  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
   echo "+ Unmounting the filesystem image ..."
-  [ ! -f "$imgfile" ] && msgError "can't find image file '$imgfile'"
-  [ "$imgmnt" == "" ] && msgError "$imgfile image filesystem is not yet mounted"
-  umount $MNTDIR
+  local imgfile="$1"
+  # if path is given
+  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
+  # removes the path prefix of imgfile
+  imgfile="$(basename $imgfile)"
+  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
+  # check if was previously mounted
+  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  [ "$imgmnt" != "" ] || msgError "can't umount '$imgfile', filesystem is not yet mounted"
+  umount $MNTDIR/$imgfile
 }
 
 envStat() {
-  local imgmnt="$(mount | grep $MNTDIR | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
-  echo "+ Status of filesystem images"
+  echo "+ Mounted filesystem images"
+  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR | grep $IMGDIR | cut -d' ' -f1)"
   if [ "$imgmnt" != "" ]; then
-    echo "$imgmnt image mounted"
+    echo "$imgmnt"
   else
     echo "no images mounted"
   fi
@@ -180,8 +200,8 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # some global variables
 APPNAME="$(basename $0)"
-APPVERSION="2.7.0"
-BASEDIR="$(cd $(dirname $0); pwd)"
+APPVERSION="2.7.1"
+BASEDIR="$(cd $(dirname $0); pwd -P)"  # pwd -P: avoid all symlinks
 TMPDIR="/tmp"
 ISODIR="$BASEDIR/iso"
 MNTDIR="$BASEDIR/mnt"
