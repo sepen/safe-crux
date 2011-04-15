@@ -198,11 +198,13 @@ main() {
 export LANG=C
 export PATH=$PATH:/sbin:/usr/sbin
 
-# some global variables
-APPNAME="$(basename $0)"
-APPVERSION="2.7.1"
-BASEDIR="$(cd $(dirname $0); pwd -P)"  # pwd -P: avoid all symlinks
-TMPDIR="/tmp"
+# static variables
+readonly APPNAME="$(basename $0)"
+readonly APPVERSION="2.7.1"
+
+# variables that can be overriden by the config file
+TMPDIR="$(mktemp -d)"
+BASEDIR="$(cd $(dirname $0); pwd -P)" # pwd -P: avoid all symlinks
 ISODIR="$BASEDIR/iso"
 MNTDIR="$BASEDIR/mnt"
 IMGDIR="$BASEDIR/img"

@@ -14,7 +14,7 @@ TODO
 [safe-env]
 
   - use $MNT_DIR/$IMG_NAME instead of $MNT_DIR for being able to run
-    more than one safe-env (due to 2.7.1)
+    more than one safe-env (due to 2.7.1) ***DONE***
 
   - optionally use one directory instead of an image (due to 2.7.2)
 
@@ -24,7 +24,6 @@ TODO
   - add more contents and info to the README file
 
   - write more documents:
-
     - howto get running your first safe-env, options, etc.
     - howto fast developing ports inside the safe environment
 
@@ -35,7 +34,7 @@ TODO
 
 [installation]
 
-  - create a Makefile for installations like this: (due to 2.7.1)
+  - create a Makefile for installations like this: (due to 2.7.1) ***WORK IN PROGRESS***
 
     /usr/bin/cse -> /usr/bin/safe-env (alias: Crux Safe Environment)
     /usr/bin/safe-env
@@ -56,3 +55,31 @@ TODO
     ~/.safe-env/doc
 
 
+  - example of installation with PREFIX=/usr
+
+    usr
+    |-- bin
+    |   |-- cse -> safe-env
+    |   `-- safe-env
+    |-- etc
+    |   `-- safe-env.conf
+    |-- man
+    |   `-- man8
+    |       `-- safe-env.8.gz
+    `-- share
+        `-- safe-env
+            |-- addons
+            |   |-- bin
+            |   |   |-- fakelogin
+            |   |   `-- prt-clean
+            |   `-- man
+            |       `-- prt-clean.1
+            |-- bin
+            |   |-- chrooted
+            |   `-- fakesetup
+            |-- doc
+            |   |-- HOWTO-Installing-uCRUX-2.1-inside-safe-env.txt
+            |   |-- HOWTO-Resize-your-image.txt
+            |   |-- HOWTO-Running-sshd-in-a-jail-using-safe-env.txt
+            |   `-- HOWTO-Working-with-prt-clean.txt
+            `-- safe-env

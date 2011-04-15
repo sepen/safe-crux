@@ -11,6 +11,30 @@ README
   provide a patch or the way to solve a bug.
 
 
+INTRODUCTION
+
+  Apparently, ATM don't exist a unified way for testing/developing ports.
+  As we known, developers are using prtutils, chroot environments or 
+  unfortunately other are using their own crux system for building and 
+  testing their ports, and that sounds terrible in some cases. For that, we are
+  working on 'safe-env', a environment similar to a "freshinstall", where
+  testing ports and try to discover bugs, and also the most issues that users
+  can find when they are building ports for their systems.
+
+  We are trying to keep the environment as simple as possible (KISS), 
+  giving freedom to respect people's customizations or preferences working daily 
+  with CRUX, but having the security of a minimal and secure environment.
+  Being minimal we're sure that it can be enough flexible to different people
+  uses. For example, I'm using it to build uCRUX packages for my old 486 laptop,
+  so I don't spend hours and hours compiling on it.
+  
+  Also with safe-env you'll have another interesting tool called 'prt-clean'
+  which helps you to take snapshots at different moments of our environment and
+  then delete ports between snapshots, listed all snapshot points, etc.
+
+  Finally, we will glad to known your opinions/suggestions/etc about that.
+
+
 REQUERIMENTS
 
   You need internet access, if not then you should place the iso and md5sum
