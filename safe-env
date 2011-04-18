@@ -127,7 +127,7 @@ envMount() {
   imgfile="$(basename $imgfile)"
   [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
   # check if was previously mounted
-  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  local imgmnt="$(mount | grep 'loop' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
   [ "$imgmnt" != "" ] && msgError "can't mount '$imgfile', filesystem is yet mounted"
   # check for directory and mount
   [ ! -d $MNTDIR/$imgfile ] && install -d $MNTDIR/$imgfile
@@ -159,14 +159,14 @@ envUmount() {
   imgfile="$(basename $imgfile)"
   [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
   # check if was previously mounted
-  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
+  local imgmnt="$(mount | grep 'loop' | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
   [ "$imgmnt" != "" ] || msgError "can't umount '$imgfile', filesystem is not yet mounted"
   umount $MNTDIR/$imgfile
 }
 
 envStat() {
   echo "+ Mounted filesystem images"
-  local imgmnt="$(mount | grep 'loop=' | grep $MNTDIR | grep $IMGDIR | cut -d' ' -f1)"
+  local imgmnt="$(mount | grep 'loop' | grep $MNTDIR | grep $IMGDIR | cut -d' ' -f1)"
   if [ "$imgmnt" != "" ]; then
     echo "$imgmnt"
   else
