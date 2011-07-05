@@ -13,10 +13,7 @@ TODO
 
 [safe-env]
 
-  - use $MNT_DIR/$IMG_NAME instead of $MNT_DIR for being able to run
-    more than one safe-env (due to 2.7.1) ***DONE***
-
-  - optionally use one directory instead of an image (due to 2.7.2)
+  - optionally use one directory instead of an image
 
 
 [documentation]
@@ -34,7 +31,7 @@ TODO
 
 [installation]
 
-  - create a Makefile for installations like this: (due to 2.7.1) ***WORK IN PROGRESS***
+  - create a Makefile for installations like this: (due to 2.7.3) ***WORK IN PROGRESS***
 
     /usr/bin/cse -> /usr/bin/safe-env (alias: Crux Safe Environment)
     /usr/bin/safe-env
