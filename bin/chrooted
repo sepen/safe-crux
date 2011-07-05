@@ -16,14 +16,13 @@ main() {
   for FS in dev tmp proc sys; do
     if [ $(mount | grep $CHROOTFS/$FS | wc -l) -eq 0 ]; then
       case $FS in
-        dev|tmp) mount --bind /$FS $CHROOTFS/$FS ;;
-        proc) mount -t $FS $FS $CHROOTFS/$FS ;;
-        sys) mount -t sysfs none $CHROOTFS/$FS ;;
+        dev|proc) mount --bind /$FS $CHROOTFS/$FS ;;
+        sys|tmp) mount -t ${FS}fs ${FS}fs $CHROOTFS/$FS ;;
       esac
     fi
   done
   chroot $CHROOTFS $@
-  for FS in dev tmp proc sys; do
+  for FS in dev proc tmp sys; do
     if [ $(mount | grep $CHROOTFS/$FS | wc -l) -gt 0 ]; then
       umount $CHROOTFS/$FS
     fi
