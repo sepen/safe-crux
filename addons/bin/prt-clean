@@ -24,7 +24,7 @@
 #
 
 msgError() {
-  echo "Error, $@" 2>&1
+  echo "$APPNAME: Error, $@" 2>&1
   exit 1
 }
 
@@ -34,13 +34,12 @@ msgVersion() {
 }
 
 msgUsage() {
-  echo "Make snapshots of installed ports and removes differences to keep a"\
-  "clean system."
+  echo "$APPNAME: Make status snapshots of installed packages and manage them."
   echo "Usage: $APPNAME subcommand <options>"
   echo "  clean         Remove all stored snapshots"
-  echo "  store    msg  Store a snapshot of installed ports"
-  echo "  restore  num  Restore to stored snapshot number"
-  echo "  diff     num  Show differences with the current state"
+  echo "  store    msg  Take an snapshot of installed ports"
+  echo "  restore  num  Restore to a status defined by certain stored snapshot"
+  echo "  diff     num  Return differences between current status and a stored snapshot"
   echo "  list          List all stored snapshots"
   echo "  help          Show this help information"
   echo "  version       Show version information"
@@ -51,7 +50,16 @@ checkUID() {
   [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
 }
 
+checkVarDir() {
+  [ ! -d $VARDIR ] && msgError "could not read directory $VARDIR"
+}
+
+checkSnapFile() {
+  [ ! -f $1 ] && msgError "could not read snapshot file $1"
+}
+
 makeSnapshot() {
+  # create a snap file with message passed as argument
   local num="$1"
   shift 1
   local msg="$@"
@@ -60,39 +68,40 @@ makeSnapshot() {
 }
 
 diffSnapshot() {
+  # create an temporary snap file to see differences
+  # between current status and the snap passed as argument
   local snap1="$VARDIR/$1.snap"
   local msg="current"
-  local num="$(getSnapshot)"
+  local num="$(getSnapshotIndex)"
   makeSnapshot $num "$msg"
   local snap2="$VARDIR/$num.snap"
-  [ ! -f $snap1 ] && msgError "cat't read snapshot file '$snap1'"
-  [ ! -f $snap2 ] && msgError "can't read snapshot file '$snap2'"
+  checkSnapFile $snap1
+  checkSnapFile $snap2
   cat $snap1 $snap2 | sort | uniq -u
   rm -f $snap2
 }
 
-getSnapshot() {
-  local snaps="$(find $VARDIR -type f -name '*.snap')"
-  local snaps="$(for i in ${snaps[@]}; do basename $i .snap; done)"
-  local max=100
-  local num=1
-  for snap in ${snaps[@]}; do
-    [ "$snap" == "$num" ] && let num=$num+1
-  done
-  echo $num
+getSnapshotIndex() {
+  # return the first index number available (stored snap files + 1)
+  local index="$(find $VARDIR -type f -name '*.snap' | wc -l)"
+  let index++
+  echo $index
 }
 
 cleanSnapshot() {
+  # clean all stored snap files
   rm -f $VARDIR/*
 }
 
 storeSnapshot() {
+  # store a new snap file with a message
   local msg="$1"
-  local num="$(getSnapshot)"
+  local num="$(getSnapshotIndex)"
   makeSnapshot $num "$msg"
 }
 
 restoreSnapshot () {
+  # go to a previous status on the system by using a snap
   local snap="$1"
   local diff="$(diffSnapshot $snap)"
   if [ ! -z "$diff" ]; then
@@ -106,10 +115,12 @@ restoreSnapshot () {
 }
 
 listSnapshot() {
+  # return a list of all stored snap files
   local snaps="$(find $VARDIR -type f -name '*.snap')"
   for i in ${snaps[@]}; do
     s="$(basename $i .snap)"
-    echo -ne "$s $(cat $VARDIR/$s.msg | tr '\n' ' ')\n"
+    t="$(stat -c '%y' $i | cut -d'.' -f1)"
+    echo -ne "$s -- $t -- $(cat $VARDIR/$s.msg | tr '\n' ' ')\n"
   done
 }
 
@@ -145,15 +156,13 @@ main () {
   esac
 }
 
-VERSION=0.2
+VERSION=0.3
 APPNAME=$(basename $0)
 
 VARDIR="/opt/var/$APPNAME"
 
-[ ! -d $VARDIR ] && install -d $VARDIR
-
 [ $# -lt 1 ] && msgUsage
-
+checkVarDir
 main "$@"
 
 # End of file
