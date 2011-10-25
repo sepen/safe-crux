@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# chrooted: abstraction tool for chroot command
+#
+
 msgUsage() {
   echo "Usage: $0 path <command>"
   echo "Note that default command executed is /bin/sh"
@@ -13,16 +17,20 @@ msgError() {
 
 main() {
   local FS
-  for FS in dev tmp proc sys; do
+  # before ...
+  for FS in dev tmp proc sys dev/pts; do
     if [ $(mount | grep $CHROOTFS/$FS | wc -l) -eq 0 ]; then
       case $FS in
-        dev|proc) mount --bind /$FS $CHROOTFS/$FS ;;
+        dev/proc) mount --bind /$FS $CHROOTFS/$FS ;;
         sys|tmp) mount -t ${FS}fs ${FS}fs $CHROOTFS/$FS ;;
+        dev/pts) mount -t devpts devpts $CHROOTFS/$FS ;;
       esac
     fi
   done
+  # do chroot
   chroot $CHROOTFS $@
-  for FS in dev proc tmp sys; do
+  # on exit ...
+  for FS in dev/pts sys proc tmp dev; do
     if [ $(mount | grep $CHROOTFS/$FS | wc -l) -gt 0 ]; then
       umount $CHROOTFS/$FS
     fi
