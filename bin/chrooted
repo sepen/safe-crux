@@ -18,10 +18,10 @@ msgError() {
 main() {
   local FS
   # before ...
-  for FS in dev tmp proc sys dev/pts; do
-    if [ $(mount | grep $CHROOTFS/$FS | wc -l) -eq 0 ]; then
+  for FS in dev proc sys tmp dev/pts; do
+    if ! mount | grep $CHROOTFS/$FS >/dev/null 2>&1; then
       case $FS in
-        dev/proc) mount --bind /$FS $CHROOTFS/$FS ;;
+        dev|proc) mount --bind /$FS $CHROOTFS/$FS ;;
         sys|tmp) mount -t ${FS}fs ${FS}fs $CHROOTFS/$FS ;;
         dev/pts) mount -t devpts devpts $CHROOTFS/$FS ;;
       esac
@@ -30,8 +30,8 @@ main() {
   # do chroot
   chroot $CHROOTFS $@
   # on exit ...
-  for FS in dev/pts sys proc tmp dev; do
-    if [ $(mount | grep $CHROOTFS/$FS | wc -l) -gt 0 ]; then
+  for FS in dev/pts tmp sys proc dev; do
+    if ! mount | grep $CHROOTFS/$FS >/dev/null 2>&1; then
       umount $CHROOTFS/$FS
     fi
   done
