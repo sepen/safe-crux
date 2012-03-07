@@ -54,7 +54,7 @@ checkUID() {
   [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
 }
 
-envInit() {
+scInit() {
   echo "+ Starting $APPNAME ..."
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
   local source_version="2.7"
@@ -86,7 +86,7 @@ envInit() {
   local imgfstype="reiserfs"
   [ ! -z $IMAGE_FSTYPE ] && imgfstype=$IMAGE_FSTYPE
   mkfs -t $imgfstype -q $imgfile 2>/dev/null
-  envMount $imgfile
+  scMount $imgfile
   rm -rf $MNTDIR/lost+found
   echo "+ Mounting the iso image ..."
   mount -o loop -t iso9660 $file_iso $ISODIR/mnt
@@ -115,10 +115,10 @@ envInit() {
   install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $MNTDIR/$imgname/opt/doc/handbook.txt
   echo "+ Unmounting the iso image ..."
   umount $ISODIR/mnt
-  envUmount $imgfile
+  scUmount $imgfile
 }
 
-envMount() {
+scMount() {
   echo "+ Mounting the filesystem image ..."
   local imgfile="$1"
   # if path is given
@@ -134,7 +134,7 @@ envMount() {
   mount -o loop $IMGDIR/$imgfile $MNTDIR/$imgfile
 }
 
-envUse() {
+scUse() {
   echo "+ Preparing the filesystem image ..."
   local imgfile="$1"
   # if path is given
@@ -143,14 +143,14 @@ envUse() {
   imgfile="$(basename $imgfile)"
   [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
   # mount the filesystem
-  envMount $imgfile
+  scMount $imgfile
   # chroot to the new filesystem
   $BINDIR/chrooted $MNTDIR/$imgfile /opt/bin/fakelogin
   # umount the filesystem
-  envUmount $imgfile
+  scUmount $imgfile
 }
 
-envUmount() {
+scUmount() {
   echo "+ Unmounting the filesystem image ..."
   local imgfile="$1"
   # if path is given
@@ -164,7 +164,7 @@ envUmount() {
   umount $MNTDIR/$imgfile
 }
 
-envStat() {
+scStat() {
   echo "+ Mounted filesystem images"
   local imgmnt="$(mount | grep $MNTDIR | grep $IMGDIR | cut -d' ' -f1)"
   if [ "$imgmnt" != "" ]; then
@@ -177,16 +177,16 @@ envStat() {
 main() {
   if [ $# -eq 1 ]; then
     case $1 in
-      init) checkUID; envInit ;;
-      stat) envStat ;;
+      init) checkUID; scInit ;;
+      stat) scStat ;;
       version) msgVersion ;;
       *) msgUsage ;;
     esac
   elif [ $# -eq 2 ]; then
     case $1 in
-      use) checkUID; shift 1; envUse $@ ;;
-      mount) checkUID; shift 1; envMount $@ ;;
-      umount) checkUID; shift 1; envUmount $@ ;;
+      use) checkUID; shift 1; scUse $@ ;;
+      mount) checkUID; shift 1; scMount $@ ;;
+      umount) checkUID; shift 1; scUmount $@ ;;
       *) msgUsage ;;
     esac
   else
