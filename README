@@ -1,7 +1,7 @@
 
 README
 
-  Welcome to safe-env: A clean and minimal CRUX enviroment.
+  Welcome to safe-crux: A clean and minimal CRUX enviroment.
 
   Sorry, until some information notes will be placed, you can read doc/* files.
 
@@ -17,7 +17,7 @@ INTRODUCTION
   As we known, developers are using prtutils, chroot environments or 
   unfortunately other are using their own crux system for building and 
   testing their ports, and that sounds terrible in some cases. For that, we are
-  working on 'safe-env', a environment similar to a "freshinstall", where
+  working on 'safe-crux', a environment similar to a "freshinstall", where
   testing ports and try to discover bugs, and also the most issues that users
   can find when they are building ports for their systems.
 
@@ -28,7 +28,7 @@ INTRODUCTION
   uses. For example, I'm using it to build uCRUX packages for my old 486 laptop,
   so I don't spend hours and hours compiling on it.
   
-  Also with safe-env you'll have another interesting tool called 'prt-clean'
+  Also with safe-crux you'll have another interesting tool called 'prt-clean'
   which helps you to take snapshots at different moments of our environment and
   then delete ports between snapshots, listed all snapshot points, etc.
 
@@ -38,7 +38,7 @@ INTRODUCTION
 REQUERIMENTS
 
   You need internet access, if not then you should place the iso and md5sum
-  you selected in etc/safe-env.conf into the ./iso directory
+  you selected in etc/safe-crux.conf into the ./iso directory
 
   Also you need a linux kernel greater or equal than 2.6.27 to use versions of
   CRUX's iso greater or equal than CRUX 2.6

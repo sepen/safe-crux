@@ -1,5 +1,5 @@
 *******************************************************************************
- HOWTO Working with prt-clean inside safe-env
+ HOWTO Working with prt-clean inside safe-crux
 *******************************************************************************
 
 
@@ -13,27 +13,27 @@
 
 [0] - Initialize the prt-clean database. Store the first snapshot.
 
-[root@safe-env /]# prt-clean store "Initial status"
-[root@safe-env /]# prt-clean list
+[root@safe-crux /]# prt-clean store "Initial status"
+[root@safe-crux /]# prt-clean list
 1 Initial status
 
 
 [1] - Install something and store a new snapshot
 
-[root@safe-env /]# prt-get depinst alsa-lib
+[root@safe-crux /]# prt-get depinst alsa-lib
 ...
-[root@safe-env /]# prt-clean store "After prt-get dep-installed alsa-lib"
-[root@safe-env /]# prt-clean list
+[root@safe-crux /]# prt-clean store "After prt-get dep-installed alsa-lib"
+[root@safe-crux /]# prt-clean list
 1 Initial status
 2 After prt-get dep-installed alsa-lib
 
 
 [2] - Install something more and store a new snapshot one more time
 
-[root@safe-env /]# prt-get depinst alsa-utils
+[root@safe-crux /]# prt-get depinst alsa-utils
 ...
-[root@safe-env /]# prt-clean store "After prt-get dep-installed alsa-utils"
-[root@safe-env /]# prt-clean list
+[root@safe-crux /]# prt-clean store "After prt-get dep-installed alsa-utils"
+[root@safe-crux /]# prt-clean list
 1 Initial status
 2 After prt-get dep-installed alsa-lib
 3 After prt-get dep-installed alsa-utils
@@ -41,10 +41,10 @@
 
 [3] - Playing with differences between snapshots
 
-[root@safe-env /]# prt-clean diff 2
+[root@safe-crux /]# prt-clean diff 2
 alsa-utils
 dialog
-[root@safe-env /]# prt-clean diff 1
+[root@safe-crux /]# prt-clean diff 1
 alsa-lib
 alsa-utils
 dialog
@@ -52,7 +52,7 @@ dialog
 
 [4] - Restore to selected snapshot
 
-[root@safe-env /]# prt-clean restore 1
+[root@safe-crux /]# prt-clean restore 1
 -- Packages removed
 alsa-lib
 alsa-utils
@@ -61,5 +61,5 @@ removed `/opt/var/prt-clean/2.msg'
 removed `/opt/var/prt-clean/2.snap'
 removed `/opt/var/prt-clean/3.msg'
 removed `/opt/var/prt-clean/3.snap'
-[root@safe-env /]# prt-clean list
+[root@safe-crux /]# prt-clean list
 1 Initial status

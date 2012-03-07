@@ -1,5 +1,5 @@
 #############################################################################
- HOWTO Running sshd in a jail using safe-env
+ HOWTO Running sshd in a jail using safe-crux
 #############################################################################
 
 
@@ -13,15 +13,15 @@
 [0] - Preparing the first image
 
 - First we need to provide an image that will be used by the user. We need
-to start safe-env and follow the general steps to prepare the enviroment.
-$ sudo safe-env init
+to start safe-crux and follow the general steps to prepare the enviroment.
+$ sudo safe-crux init
 
 (inside the enviroment we need to make the ports -u and prt-get sysup to 
 have an up-to-date enviroment, when it had finished, we can exit and take
-a look to /path_to_safe-env/img/core, wich will be our up-to-date image 
+a look to /path_to_safe-crux/img/core, wich will be our up-to-date image 
 that will be used by users at first login)
 
-- At this point we can copy the entire /path_to_safe-env/ to another path
+- At this point we can copy the entire /path_to_safe-crux/ to another path
 that will be called from the script used like the user default shell.
 
 
@@ -33,9 +33,9 @@ that will be called from the script used like the user default shell.
   [CODE]
   #!/bin/bash
   #
-  # Script to launch safe-env
+  # Script to launch safe-crux
   #
-  sudo /path/to/safe-env use core # change to your binary path
+  sudo /path/to/safe-crux use core # change to your binary path
   [/CODE]
 
 
@@ -55,5 +55,5 @@ loaded.
 [4] - Using it for more users
 
 - If we want to use this enviroment by more users, we need to copy the entire
-/path_to_safe-env/ to the new user's path, and change the script to call this
+/path_to_safe-crux/ to the new user's path, and change the script to call this
 new path.

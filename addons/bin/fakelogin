@@ -4,7 +4,7 @@ clear
 
 cat <<EOF
 
-Welcome to safe-env: A clean and minimal enviroment.
+Welcome to safe-crux: A clean and minimal enviroment.
 
 Please contact the authors to report bugs.
 Before reporting a bug try to be sure you have the lastest source available.
@@ -31,7 +31,7 @@ EOF
 env -i \
   HOME=/root \
   PATH=/bin:/sbin:/usr/bin:/usr/sbin:/opt/bin \
-  PS1='[\[\033[1m\]\u@safe-env \w\[\033[0m\]]\[\033[1m\]\$\[\033[0m\] ' \
+  PS1='[\[\033[1m\]\u@safe-crux \w\[\033[0m\]]\[\033[1m\]\$\[\033[0m\] ' \
   INPUTRC=/etc/inputrc \
   LESS=-R \
   TERM=xterm \

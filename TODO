@@ -11,7 +11,7 @@ TODO
     2.8.0 for the first version running CRUX 2.8
     ...
 
-[safe-env]
+[safe-crux]
 
   - optionally use one directory instead of an image
 
@@ -21,10 +21,10 @@ TODO
   - add more contents and info to the README file
 
   - write more documents:
-    - howto get running your first safe-env, options, etc.
+    - howto get running your first safe-crux, options, etc.
     - howto fast developing ports inside the safe environment
 
-  - improve man files for safe-env and prt-clean
+  - improve man files for safe-crux and prt-clean
 
   - write a skeleton file for HOWTO's
 
@@ -33,38 +33,36 @@ TODO
 
   - create a Makefile for installations like this: (due to 2.7.3) ***WORK IN PROGRESS***
 
-    /usr/bin/cse -> /usr/bin/safe-env (alias: Crux Safe Environment)
-    /usr/bin/safe-env
-    /usr/etc/safe-env.conf
-    /usr/man/man8/safe-env.8.gz
-    /usr/share/safe-env/bin/*
-    /usr/share/safe-env/doc/*
-    /usr/share/safe-env/addons/*
+    /usr/bin/safe-crux
+    /usr/etc/safe-crux.conf
+    /usr/man/man8/safe-crux.8.gz
+    /usr/share/safe-crux/bin/*
+    /usr/share/safe-crux/doc/*
+    /usr/share/safe-crux/addons/*
 
     from the script we should try to read first the user config file
     which is an overlay for configuration variables:
-    ~/.safe-env.conf
+    ~/.safe-crux.conf
 
     and also the first time we must to create all required directories:
-    ~/.safe-env/mnt
-    ~/.safe-env/iso
-    ~/.safe-env/img
-    ~/.safe-env/doc
+    ~/.safe-crux/mnt
+    ~/.safe-crux/iso
+    ~/.safe-crux/img
 
 
   - example of installation with PREFIX=/usr
 
     usr
     |-- bin
-    |   |-- cse -> safe-env
-    |   `-- safe-env
+    |   |-- cse -> safe-crux
+    |   `-- safe-crux
     |-- etc
-    |   `-- safe-env.conf
+    |   `-- safe-crux.conf
     |-- man
     |   `-- man8
-    |       `-- safe-env.8.gz
+    |       `-- safe-crux.8.gz
     `-- share
-        `-- safe-env
+        `-- safe-crux
             |-- addons
             |   |-- bin
             |   |   |-- fakelogin
@@ -75,8 +73,8 @@ TODO
             |   |-- chrooted
             |   `-- fakesetup
             |-- doc
-            |   |-- HOWTO-Installing-uCRUX-2.1-inside-safe-env.txt
+            |   |-- HOWTO-Installing-uCRUX-2.1-inside-safe-crux.txt
             |   |-- HOWTO-Resize-your-image.txt
-            |   |-- HOWTO-Running-sshd-in-a-jail-using-safe-env.txt
+            |   |-- HOWTO-Running-sshd-in-a-jail-using-safe-crux.txt
             |   `-- HOWTO-Working-with-prt-clean.txt
-            `-- safe-env
+            `-- safe-crux

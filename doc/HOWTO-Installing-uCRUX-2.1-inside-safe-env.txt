@@ -1,5 +1,5 @@
 *******************************************************************************
- HOWTO Installing uCRUX-2.1 inside safe-env
+ HOWTO Installing uCRUX-2.1 inside safe-crux
 *******************************************************************************
 
 
@@ -12,19 +12,19 @@
 
 [0] - Prepare the environment
 
-$ vim etc/safe-env.conf (select ucrux-2.1)
+$ vim etc/safe-crux.conf (select ucrux-2.1)
 
 
 [1] - Create the environment
 
-$ sudo ./safe-env init
+$ sudo ./safe-crux init
 $ mv img/core img/ucrux-2.1
 
 
 [2] - Finish the installation
 
 $ sudo mount -o loop -t iso9660 iso/ucrux-2.1.iso iso/mnt
-$ sudo ./safe-env mount ucrux-2.1
+$ sudo ./safe-crux mount ucrux-2.1
 $ sudo tar -C mnt/usr/src -xvjf iso/mnt/crux/kernel/linux-2.6.11.7.tar.bz2
 $ sudo ln -sf linux-2.6.11.7 mnt/usr/src/linux
 $ sudo cp iso/mnt/crux/kernel/linux-2.6.11.7.config mnt/usr/src/linux/.config
@@ -41,13 +41,13 @@ $ sudo sed -e '/# PKGMK_WORK_DIR=\"\$PWD/ s//PKGMK_WORK_DIR=\"\/tmp/' \
 $ sudo sed -e 's|/usr/ports/core|/usr/ports/base|' -e '/\/usr\/ports\/xorg/d' \
            -e 's|#prtdir /usr/ports/contrib|prtdir /usr/ports/contrib|' \
            -i /opt/etc/prt-get.conf
-$ sudo ./safe-env umount ucrux-2.1
+$ sudo ./safe-crux umount ucrux-2.1
 $ sudo umount iso/mnt
 
 
 [3] - Upgrade the system
 
-$ sudo ./safe-env use ucrux-2.1
+$ sudo ./safe-crux use ucrux-2.1
 $ ports -u
 $ prt-get sysup
 $ exit
