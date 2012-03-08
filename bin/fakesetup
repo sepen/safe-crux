@@ -56,6 +56,9 @@ esac
   
 [ ! -f $PKGADD ] && msgError "can't find pkgadd command in '$PKGADD'"
 
+# handle signals
+trap "msgError interrupted" SIGINT SIGTERM
+
 if [ "$FORCE" != "y" ]; then
   read -p "Do you want to fakesetup the following dir: $DESTDIR ? [y|n] " answer
   [ "$answer" == "y" ] && main
