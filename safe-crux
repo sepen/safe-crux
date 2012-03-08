@@ -38,7 +38,7 @@ msgUsage() {
   echo "  help             Show this help information"
   echo "  version          Show version information"
   echo "  stat             Show status for mounted images"
-  echo "  init             Create a new environment with core filesystem"
+  echo "  install          Create a new environment with core filesystem"
   echo "  use IMG or FILE  Use the filesystem image as the environment"
   echo "  mount IMG        Mount the selected image as the environment"
   echo "  umount IMG       Umount the environment"
@@ -54,7 +54,7 @@ checkUID() {
   [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
 }
 
-scInit() {
+scInstall() {
   echo "+ Starting $APPNAME ..."
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
   local source_version="2.7.1"
@@ -86,10 +86,11 @@ scInit() {
   local imgfstype="reiserfs"
   [ ! -z $IMAGE_FSTYPE ] && imgfstype=$IMAGE_FSTYPE
   mkfs -t $imgfstype -q $imgfile 2>/dev/null
+  [ $? -ne 0 ] && exit 0
   scMount $imgfile
   rm -rf $MNTDIR/lost+found
   echo "+ Mounting the iso image ..."
-  mount -o loop -t iso9660 $file_iso $ISODIR/mnt
+  mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
   echo "+ Doing the fakesetup ..."
   local pkgsdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
   [ ! -d $pkgsdir ] && pkgsdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
@@ -177,7 +178,7 @@ scStat() {
 main() {
   if [ $# -eq 1 ]; then
     case $1 in
-      init) checkUID; scInit ;;
+      install) checkUID; scInstall ;;
       stat) scStat ;;
       version) msgVersion ;;
       *) msgUsage ;;
