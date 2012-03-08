@@ -161,7 +161,7 @@ scUmount() {
   # check if was previously mounted
   local imgmnt="$(mount | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
   [ "$imgmnt" != "" ] || msgError "can't umount '$imgfile', filesystem is not yet mounted"
-  umount $MNTDIR/$imgfile
+  umount $MNTDIR/$imgfile && rm -r $MNTDIR/$imgfile
 }
 
 scStat() {
