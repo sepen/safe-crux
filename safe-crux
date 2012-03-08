@@ -215,6 +215,9 @@ ADDDIR="$BASEDIR/addons"
 # load config vars
 [ -f "$ETCDIR/$APPNAME.conf" ] && . $ETCDIR/$APPNAME.conf
 
+# handle signals
+trap "msgError interrupted" SIGINT SIGTERM
+
 # call the main rutine
 main $@
 
