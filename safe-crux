@@ -57,7 +57,7 @@ checkUID() {
 scInit() {
   echo "+ Starting $APPNAME ..."
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local source_version="2.7"
+  local source_version="2.7.1"
   [ ! -z $SOURCE_ISO_VERSION ] && source_version="$SOURCE_ISO_VERSION"
   local source_iso="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.iso"
   local source_md5="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.md5"
@@ -72,7 +72,7 @@ scInit() {
   checkMD5 $file_md5
   echo "+ Checking for existing images ..."
   local answer="n"
-  local imgname="core"
+  local imgname="crux-$source_version"
   local imgfile="$IMGDIR/$imgname"
   if [ -f $imgfile ]; then
     read -p "File '$imgfile' found, do you want to remove it [y|n] " answer
