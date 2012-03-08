@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+
 msgError() {
   echo "Error, $@" 2>&1
   exit 1
@@ -52,6 +53,37 @@ checkMD5() {
 
 checkUID() {
   [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
+}
+
+getTarget() {
+  local target=$1
+  # if is not a valid path
+  if [ ! -e $target ]; then
+    # is is not a file under $IMGDIR
+    if [ ! -f $IMGDIR/$target ]; then
+      msgError "can't find $target"
+    else
+      target="$IMGDIR/$target"
+    fi
+  fi
+  echo $target
+}
+
+getTargetType() {
+  local target=$1
+  if [ -b "$target" ]; then
+    echo "block"
+  elif [ -d "$target" ]; then
+    echo "dir"
+  elif [ -f "$target" ]; then
+    echo "file"
+  fi
+}
+
+getMountPoint() {
+  local target=$1
+  # use name of target as name of mount point
+  echo "$MNTDIR/$(basename $target)"
 }
 
 scInstall() {
@@ -120,49 +152,58 @@ scInstall() {
 }
 
 scMount() {
-  echo "+ Mounting the filesystem image ..."
-  local imgfile="$1"
-  # if path is given
-  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
-  # removes the path prefix of imgfile
-  imgfile="$(basename $imgfile)"
-  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
-  # check if was previously mounted
-  local imgmnt="$(mount | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
-  [ "$imgmnt" != "" ] && msgError "can't mount '$imgfile', filesystem is yet mounted"
-  # check for directory and mount
-  [ ! -d $MNTDIR/$imgfile ] && install -d $MNTDIR/$imgfile
-  mount -o loop $IMGDIR/$imgfile $MNTDIR/$imgfile
+  echo "+ Mounting $1 ..."
+  local target=$(getTarget $1)
+  local mount_point=$2
+  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
+  local target_type=$(getTargetType $target)
+  # decide what to do
+  case $target_type in
+    file)
+      mkdir -p $mount_point
+      mount -o loop,rw $target $mount_point
+      ;;
+    block)
+      mkdir -p $mount_point
+      mount -o rw $target $mount_point
+      ;;
+    *)
+      msgError "can't use $target, not valid target type $target_type"
+      ;;
+  esac
 }
 
 scUse() {
-  echo "+ Preparing the filesystem image ..."
-  local imgfile="$1"
-  # if path is given
-  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
-  # removes the path prefix of imgfile
-  imgfile="$(basename $imgfile)"
-  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
-  # mount the filesystem
-  scMount $imgfile
-  # chroot to the new filesystem
-  $BINDIR/chrooted $MNTDIR/$imgfile /opt/bin/fakelogin
-  # umount the filesystem
-  scUmount $imgfile
+  local target=$(getTarget $1)
+  local target_type=$(getTargetType $target)
+  # decide what to do
+  case $target_type in
+    dir)
+      # chroot the dir
+      $BINDIR/chrooted $target /opt/bin/fakelogin
+      ;;
+    file|block)
+      # obtain a mount point where target will be mounted
+      local mount_point=$(getMountPoint $target)
+      # mount the target
+      scMount $target $mount_point
+      # chroot the mount point
+      $BINDIR/chrooted $mount_point /opt/bin/fakelogin
+      # umount the mount point
+      scUmount $target $mount_point
+      ;;
+    *)
+      msgError "can't use $target, not valid target type $target_type"
+      ;;
+  esac
 }
 
 scUmount() {
-  echo "+ Unmounting the filesystem image ..."
-  local imgfile="$1"
-  # if path is given
-  [ ! -f "$imgfile" ] && imgfile="$IMGDIR/$1"
-  # removes the path prefix of imgfile
-  imgfile="$(basename $imgfile)"
-  [ ! -f "$IMGDIR/$imgfile" ] && msgError "can't find image file '$imgfile'"
-  # check if was previously mounted
-  local imgmnt="$(mount | grep $MNTDIR/$imgfile | cut -d' ' -f1 | sed "s|$IMGDIR/||")"
-  [ "$imgmnt" != "" ] || msgError "can't umount '$imgfile', filesystem is not yet mounted"
-  umount $MNTDIR/$imgfile && rm -r $MNTDIR/$imgfile
+  echo "+ Unmounting $1 ..."
+  local target=$(getTarget $1)
+  local mount_point=$2
+  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
+  umount -v $mount_point && rm -r $mount_point
 }
 
 scStat() {
@@ -178,17 +219,40 @@ scStat() {
 main() {
   if [ $# -eq 1 ]; then
     case $1 in
-      install) checkUID; scInstall ;;
-      stat) scStat ;;
-      version) msgVersion ;;
-      *) msgUsage ;;
+      install)
+	checkUID
+	scInstall
+	;;
+      stat)
+	scStat
+	;;
+      version)
+	msgVersion
+	;;
+      *)
+	msgUsage
+	;;
     esac
   elif [ $# -eq 2 ]; then
     case $1 in
-      use) checkUID; shift 1; scUse $@ ;;
-      mount) checkUID; shift 1; scMount $@ ;;
-      umount) checkUID; shift 1; scUmount $@ ;;
-      *) msgUsage ;;
+      use)
+	checkUID
+	shift 1
+	scUse $@
+	;;
+      mount)
+	checkUID
+	shift 1
+	scMount $@
+	;;
+      umount)
+	checkUID
+	shift 1
+	scUmount $@
+	;;
+      *)
+	msgUsage
+	;;
     esac
   else
     msgUsage
