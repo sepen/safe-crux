@@ -31,9 +31,7 @@ main() {
   chroot $CHROOTFS $@
   # on exit ...
   for FS in dev/pts tmp sys proc dev; do
-    if ! mount | grep $CHROOTFS/$FS >/dev/null 2>&1; then
-      umount $CHROOTFS/$FS
-    fi
+    umount $CHROOTFS/$FS
   done
 }
 
