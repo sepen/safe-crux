@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# fakesetup: Start a fake setup installation. Useful for chroot installations.
+# fakesetup: Fake setup installation script for CRUX.
 #
 
 msgUsage() {

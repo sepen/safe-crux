@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # chrooted: abstraction tool for chroot command
 #
