@@ -11,11 +11,13 @@ MANDIR  = $(PREFIX)/share/man
 all:
 
 install:
-	install -D -m 0755 safe-crux $(DESTDIR)/$(DATADIR)/safe-crux
-	install -d -m 0755 $(DESTDIR)/$(BINDIR)
+	install -d $(DESTDIR)/$(DATADIR)
+	install -m 0755 safe-crux $(DESTDIR)/$(DATADIR)/safe-crux
+	cp -r bin doc $(DESTDIR)/$(DATADIR)
+	install -d $(DESTDIR)/$(BINDIR)
 	ln -sf $(DATADIR)/safe-crux $(DESTDIR)/$(BINDIR)/safe-crux
-	ln -sf $(DATADIR)/safe-crux $(DESTDIR)/$(BINDIR)/cse
-	install -D -m 0644 etc/safe-crux.conf $(DESTDIR)/$(CONFDIR)/safe-crux.conf
+	install -d $(DESTDIR)/$(CONFDIR)
+	install -m 0644 etc/safe-crux.conf $(DESTDIR)/$(CONFDIR)/safe-crux.conf
+	install -d $(DESTDIR)/$(MANDIR)/man{1,5}
 	install -D -m 0644 man/safe-crux.1 $(DESTDIR)/$(MANDIR)/man1/safe-crux.1
-	install -D -m 0644 man/safe-crux.conf.5 $(DESTDIR)/$(MANDIR)/man1/safe-crux.conf.5
-	cp -r addons bin doc $(DESTDIR)/$(DATADIR)
+	install -D -m 0644 man/safe-crux.conf.5 $(DESTDIR)/$(MANDIR)/man5/safe-crux.conf.5
