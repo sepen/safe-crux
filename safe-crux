@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Copyright (c) 2007 - 2011
-#   by Jose V Beneyto, <sepen@crux.nu>
-#   and Victor Martinez, <pitillo@ono.com>
+# Copyright (c) 2007 - 2012
+#   Jose V Beneyto, <sepen@crux.nu>
+#   Victor Martinez, <pitillo@ono.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -77,6 +77,8 @@ getTargetType() {
     echo "dir"
   elif [ -f "$target" ]; then
     echo "file"
+  else
+    echo "null"
   fi
 }
 
@@ -86,8 +88,7 @@ getMountPoint() {
   echo "$MNTDIR/$(basename $target)"
 }
 
-scInstall() {
-  echo "+ Starting $APPNAME ..."
+downloadISO() {
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
   local source_version="2.7.1"
   [ ! -z $SOURCE_ISO_VERSION ] && source_version="$SOURCE_ISO_VERSION"
@@ -102,10 +103,12 @@ scInstall() {
   [ ! -f $file_md5 ] && wget $wget_options $source_md5
   echo "+ Checking md5sum ..."
   checkMD5 $file_md5
+}
+
+makeImageFile() {
   echo "+ Checking for existing images ..."
   local answer="n"
-  local imgname="crux-$source_version"
-  local imgfile="$IMGDIR/$imgname"
+  local imgfile=$1
   if [ -f $imgfile ]; then
     read -p "File '$imgfile' found, do you want to remove it [y|n] " answer
     [ "$answer" == "y" ] && rm -vf $imgfile
@@ -114,45 +117,28 @@ scInstall() {
   local imgsize="512000" # 512M
   [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
   dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
-  echo "+ Formating the filesystem image ..."
-  local imgfstype="reiserfs"
-  [ ! -z $IMAGE_FSTYPE ] && imgfstype=$IMAGE_FSTYPE
-  mkfs -t $imgfstype -q $imgfile 2>/dev/null
-  [ $? -ne 0 ] && exit 0
-  scMount $imgfile
-  rm -rf $MNTDIR/lost+found
-  echo "+ Mounting the iso image ..."
-  mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
-  echo "+ Doing the fakesetup ..."
-  local pkgsdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
-  [ ! -d $pkgsdir ] && pkgsdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
-  local pkgadd_bin=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
-  if [ ! -f $pkgadd_bin ]; then
-    local pkgutils_pkg=$(find $pkgsdir -type f -name 'pkgutils#*' -exec basename {} \;)
-    case $pkgutils_pkg in
-      *.xz) pkgutils_pkg=$(find $ISODIR/mnt/tools -type f -name 'pkgutils#*') ;;
-    esac
-    tar -C $TMPDIR -xzf $pkgutils_pkg usr/bin/pkgadd
-    pkgadd_bin=$TMPDIR/usr/bin/pkgadd
-    if [ ! -f $pkgadd_bin ]; then
-      msgError "can't find pkgadd binary in '$pkgadd_bin'"
-    fi
-  fi
-  sh $BINDIR/fakesetup $pkgsdir $MNTDIR/$imgname --with-pkgadd=$pkgadd_bin
-  echo "+ Installing more addons ..."
-  install -D -m 0644 /etc/resolv.conf $MNTDIR/$imgname/etc/resolv.conf
-  install -D -m 0644 /etc/hosts $MNTDIR/$imgname/etc/hosts
-  install -D -m 0755 $ADDDIR/bin/prt-clean $MNTDIR/$imgname/opt/bin/prt-clean
-  install -D -m 0755 $ADDDIR/bin/fakelogin $MNTDIR/$imgname/opt/bin/fakelogin
-  install -D -m 0655 $ADDDIR/man/prt-clean.1 $MNTDIR/$imgname/opt/man/man1/prt-clean.1
-  install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $MNTDIR/$imgname/opt/doc/handbook.txt
-  echo "+ Unmounting the iso image ..."
-  umount $ISODIR/mnt
-  scUmount $imgfile
+}
+
+makeFileSystem() {
+  echo "+ Formating ..."
+  local target=$(getTarget $1)
+  local target_type=$(getTargetType $target)
+  # decide what to do
+  case $target_type in
+    file|block)
+      local fstype="ext2"
+      [ ! -z $IMAGE_FSTYPE ] && fstype=$IMAGE_FSTYPE
+      mkfs -t $fstype -q $target
+      [ $? -ne 0 ] && exit 0
+      ;;
+    *)
+      msgError "can't format $target"
+      ;;
+  esac
 }
 
 scMount() {
-  echo "+ Mounting $1 ..."
+  echo "+ Mounting target $1 ..."
   local target=$(getTarget $1)
   local mount_point=$2
   [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
@@ -168,7 +154,90 @@ scMount() {
       mount -o rw $target $mount_point
       ;;
     *)
-      msgError "can't use $target, not valid target type $target_type"
+      msgError "can't mount $target"
+      ;;
+  esac
+}
+
+scUmount() {
+  echo "+ Unmounting target $1 ..."
+  local target=$(getTarget $1)
+  local mount_point=$2
+  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
+  umount -v $mount_point && rm -r $mount_point
+}
+
+scInstall() {
+  local use_iso=1
+  local target=$IMGDIR/crux
+  [ ! -z $1 ] && target=$1
+  local target_type=$(getTargetType $target)
+  local mount_point=$2
+  [ -z $mount_point ] && mount_point=$(getMountPoint $target)
+  case $target_type in
+    block|null|file)
+      if [ $target_type != "block" ]; then
+        # null means that target still not exists, so we should create a new image file
+	[ $target_type == "null" ] && target=$IMGDIR/$target
+        makeImageFile $target
+      fi
+      makeFileSystem $target
+      scMount $target $mount_point && rm -r $mount_point/lost+found
+      ;;
+    dir)
+      # we will install in a directory
+      mount_point=$target
+      ;;
+  esac
+  echo "+ Running the setup ..."
+  local pkgdir
+  [ ! -z $PACKAGE_DIR ] && pkgdir=$PACKAGE_DIR
+  local pkgadd
+  [ ! -z $PKGADD_BIN ] && pkgadd=$PKGADD_BIN
+  # if both pkgdir and pkgadd are well defined we don't need to use the iso for them
+  if [ ! -z $pkgdir ] && [ ! -z $pkgadd ]; then
+    use_iso=0
+  else
+    use_iso=1
+    # now we must obtain pkgdir and pkgadd from the iso
+    downloadISO
+    local file_iso="$ISODIR/${SOURCE_ISO_FILE##*/}"
+    echo "+ Mounting the iso image ..."
+    mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
+    local pkgdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
+    [ ! -d $pkgdir ] && pkgdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
+    local pkgadd=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
+    if [ ! -f $pkgadd ]; then
+      local pkgutils=$(find $pkgdir -type f -name 'pkgutils#*' -exec basename {} \;)
+      case $pkgutils in
+        *.xz) pkgutils=$(find $ISODIR/mnt/tools -type f -name 'pkgutils#*') ;;
+      esac
+      tar -C $TMPDIR -xzf $pkgutils usr/bin/pkgadd
+      pkgadd=$TMPDIR/usr/bin/pkgadd
+      if [ ! -f $pkgadd ]; then
+        msgError "can't find pkgadd binary in '$pkgadd'"
+      fi
+    fi
+  fi
+  # call the fakesetup
+  $BINDIR/fakesetup $pkgdir $mount_point --with-pkgadd=$pkgadd
+  if [ $? -eq 0 ]; then
+    echo "+ Installing extra stuff ..."
+    install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
+    install -D -m 0644 /etc/hosts $mount_point/etc/hosts
+    if [ $use_iso -eq 1 ]; then
+      install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
+    fi
+  fi
+  # umount the iso if was used 
+  if [ $use_iso -eq 1 ]; then
+    echo "+ Unmounting the iso image ..."
+    umount $ISODIR/mnt
+  fi
+  # umount the target if a directory not was used
+  case $target_type in
+    block|null|file)
+      scUmount $target $mount_point
       ;;
   esac
 }
@@ -180,7 +249,7 @@ scUse() {
   case $target_type in
     dir)
       # chroot the dir
-      $BINDIR/chrooted $target /opt/bin/fakelogin
+      $BINDIR/chrooted $target
       ;;
     file|block)
       # obtain a mount point where target will be mounted
@@ -188,22 +257,14 @@ scUse() {
       # mount the target
       scMount $target $mount_point
       # chroot the mount point
-      $BINDIR/chrooted $mount_point /opt/bin/fakelogin
+      $BINDIR/chrooted $mount_point
       # umount the mount point
       scUmount $target $mount_point
       ;;
     *)
-      msgError "can't use $target, not valid target type $target_type"
+      msgError "can't use $target"
       ;;
   esac
-}
-
-scUmount() {
-  echo "+ Unmounting $1 ..."
-  local target=$(getTarget $1)
-  local mount_point=$2
-  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
-  umount -v $mount_point && rm -r $mount_point
 }
 
 scStat() {
@@ -217,46 +278,37 @@ scStat() {
 }
 
 main() {
-  if [ $# -eq 1 ]; then
-    case $1 in
-      install)
-	checkUID
-	scInstall
-	;;
-      stat)
-	scStat
-	;;
-      version)
-	msgVersion
-	;;
-      *)
-	msgUsage
-	;;
-    esac
-  elif [ $# -eq 2 ]; then
-    case $1 in
-      use)
-	checkUID
-	shift 1
-	scUse $@
-	;;
-      mount)
-	checkUID
-	shift 1
-	scMount $@
-	;;
-      umount)
-	checkUID
-	shift 1
-	scUmount $@
-	;;
-      *)
-	msgUsage
-	;;
-    esac
-  else
-    msgUsage
-  fi
+  case $1 in
+    install)
+      checkUID
+      shift 1
+      scInstall $@
+      ;;
+    use)
+      checkUID
+      shift 1
+      scUse $@
+      ;;
+    mount)
+      checkUID
+      shift 1
+      scMount $@
+      ;;
+    umount)
+      checkUID
+      shift 1
+      scUmount $@
+      ;;
+    stat)
+      scStat
+      ;;
+    version)
+      msgVersion
+      ;;
+    *)
+      msgUsage
+      ;;
+  esac
 }
 
 # some environment variables
@@ -275,7 +327,6 @@ MNTDIR="$BASEDIR/mnt"
 IMGDIR="$BASEDIR/img"
 BINDIR="$BASEDIR/bin"
 ETCDIR="$BASEDIR/etc"
-ADDDIR="$BASEDIR/addons"
 
 # load config vars
 [ -f "$ETCDIR/$APPNAME.conf" ] && . $ETCDIR/$APPNAME.conf
