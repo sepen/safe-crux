@@ -36,13 +36,13 @@ msgVersion() {
 msgUsage() {
   echo "Usage: $APPNAME subcommand <arguments>"
   echo "Where options are:"
-  echo "  help             Show this help information"
-  echo "  version          Show version information"
-  echo "  stat             Show status for mounted images"
-  echo "  install          Create a new environment with core filesystem"
-  echo "  use IMG or FILE  Use the filesystem image as the environment"
-  echo "  mount IMG        Mount the selected image as the environment"
-  echo "  umount IMG       Umount the environment"
+  echo "  help                     Show this help information"
+  echo "  version                  Show version information"
+  echo "  stat                     Show status for mounted images"
+  echo "  install <target|file>    Create new environment"
+  echo "  use [target|file]        Use the filesystem image as the environment"
+  echo "  mount [target]           Mount the selected image as the environment"
+  echo "  umount [target]          Umount the environment"
   exit 0
 }
 
