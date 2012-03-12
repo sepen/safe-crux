@@ -19,18 +19,19 @@ msgError() {
 main() {
   # adjust the pkg database
   if [ ! -d $DESTDIR/var/lib/pkg ]; then
-    echo "+ Initializating package database..."
+    echo "+ Initializating package database ..."
     install -d -m 0755 $DESTDIR/var/lib/pkg
     touch $DESTDIR/var/lib/pkg/db
   fi
   if [ -d $DESTDIR/var/lib/pkg/rejected ]; then
-    echo "+ Removing rejected file from package database stuff..."
+    echo "+ Removing rejected file from package database stuff ..."
     rm -rf $DESTDIR/var/lib/pkg/rejected
   fi
   # install packages
-  for pkg in $(find $PKGSDIR -type f -name '*.pkg.tar.*'); do
-    echo -ne "+ Installing $(basename $pkg) -> $DESTDIR "
-    $PKGADD -r $DESTDIR $pkg && echo " DONE."
+  echo "+ Installing packages ..."
+  for pkg in $(find $PKGDIR -type f -name '*.pkg.tar.*'); do
+    echo "$(basename $pkg) "
+    $PKGADD -r $DESTDIR $pkg
   done
 }
 
@@ -40,16 +41,16 @@ main() {
 [ ! -d "$1" ] && msgError "'$1' is not a path"
 [ ! -d "$2" ] && msgError "'$2' is not a path"
 
-PKGSDIR=$1
+PKGDIR=$1
 DESTDIR=$2
 
 [ $# -eq 3 ] && OPTIONS=$3
 
-FORCE="n"
+FORCE=0
 PKGADD="/usr/bin/pkgadd"
 
 case $OPTIONS in
-  -y|--yes) FORCE="y" ;;
+  -y|--yes) FORCE=1 ;;
   --with-pkgadd=*) PKGADD="${OPTIONS##*=}" ;;
   *) msgUsage ;;
 esac
@@ -59,11 +60,19 @@ esac
 # handle signals
 trap "msgError interrupted" SIGINT SIGTERM
 
-if [ "$FORCE" != "y" ]; then
-  read -p "Do you want to fakesetup the following dir: $DESTDIR ? [y|n] " answer
-  [ "$answer" == "y" ] && main
-else
-  main
+if [ $FORCE -ne 1 ]; then
+  cat <<EOF
+You're going to install with the following parameters:
+destdir : $DESTDIR
+pkgdir  : $PKGDIR
+pkgadd  : $PKGADD
+EOF
+  read -p "Continue? (y,n) " answer
+  [ "$answer" != "y" ] && exit 1
 fi
+
+main
+
+exit 0
 
 # End of file
