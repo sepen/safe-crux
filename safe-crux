@@ -153,9 +153,6 @@ scMount() {
       mkdir -p $mount_point
       mount -o rw $target $mount_point
       ;;
-    *)
-      msgError "can't mount $target"
-      ;;
   esac
 }
 
@@ -177,8 +174,7 @@ scInstall() {
   case $target_type in
     block|null|file)
       if [ $target_type != "block" ]; then
-        # null means that target still not exists, so we should create a new image file
-	[ $target_type == "null" ] && target=$IMGDIR/$target
+        # target still not exists, so we should create a new image file
         makeImageFile $target
       fi
       makeFileSystem $target
@@ -261,9 +257,6 @@ scUse() {
       # umount the mount point
       scUmount $target $mount_point
       ;;
-    *)
-      msgError "can't use $target"
-      ;;
   esac
 }
 
@@ -285,16 +278,19 @@ main() {
       scInstall $@
       ;;
     use)
+      [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
       scUse $@
       ;;
     mount)
+      [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
       scMount $@
       ;;
     umount)
+      [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
       scUmount $@
