@@ -2,7 +2,7 @@
 
 .SH NAME
 
-safe-crux - Safe Environment for building and testing CRUX ports
+safe-crux - Safe CRUX Environment
 
 .SH SYNOPSIS
 
@@ -12,31 +12,35 @@ safe-crux - Safe Environment for building and testing CRUX ports
 
 .SH SUBCOMMANDS
 
-.TP 13
+.TP 22
 .B help
 Show help information
-.TP 13
+.TP 22
+.B version
+Show version information
+.TP 22
 .B stat
 Show status for mounted images
-.TP 13
-.B init
-Create a new environment with core filesystem"
-.TP 7
+.TP 8
+.B install
+.IR <target|file>
+Create new environment
+.TP 8
 .B use
-.IR image
-Use the filesystem image as the environment
-.TP 7
+.IR [target|file]
+Use target or file as the environment
+.TP 8
 .B mount
-.IR image
-Mount the filesystem image
-.TP 7
+.IR [target|file]
+Mount the selected target or file as the environment
+.TP 8
 .B umount
-.IR image
-Umount the filesystem image
+.IR [target|file]
+Umount the selected target or file as the environment
 
 .SH AVAILABILITY
 
-Teorically all Linux flavors.
+All Linux flavours
 
 .SH AUTHORS
 
