@@ -261,13 +261,10 @@ scUse() {
 }
 
 scStat() {
-  echo "+ Mounted filesystem images"
-  local imgmnt="$(mount | grep $MNTDIR | grep $IMGDIR | cut -d' ' -f1)"
-  if [ "$imgmnt" != "" ]; then
-    echo "$imgmnt"
-  else
-    echo "no images mounted"
-  fi
+  sudo ps u | grep chrooted \
+  | while read a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13; do
+	[ ! -z "$a9" -a ! -z "$a13" ] && echo "$a9 $a13"
+  done
 }
 
 main() {
@@ -296,6 +293,7 @@ main() {
       scUmount $@
       ;;
     stat)
+      checkUID
       scStat
       ;;
     version)
