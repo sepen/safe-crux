@@ -241,11 +241,12 @@ scInstall() {
 scUse() {
   local target=$(getTarget $1)
   local target_type=$(getTargetType $target)
+  local chroot_shell="/usr/bin/env -i HOME=/root /bin/bash"
   # decide what to do
   case $target_type in
     dir)
       # chroot the dir
-      $BINDIR/chrooted $target
+      $BINDIR/chrooted $target $chroot_shell
       ;;
     file|block)
       # obtain a mount point where target will be mounted
@@ -253,7 +254,7 @@ scUse() {
       # mount the target
       scMount $target $mount_point
       # chroot the mount point
-      $BINDIR/chrooted $mount_point
+      $BINDIR/chrooted $mount_point $chroot_shell
       # umount the mount point
       scUmount $target $mount_point
       ;;
