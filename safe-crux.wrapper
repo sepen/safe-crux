@@ -1,0 +1,7 @@
+#!/bin/sh
+
+BASEDIR=/usr/share/safe-crux
+
+cd $BASEDIR && sudo ./safe-crux $@
+
+# End of file
