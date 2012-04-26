@@ -373,8 +373,8 @@ USERDIR="$HOME/.$APPNAME"
 
 # load config vars overwriten by user
 if [ $USERCONF -eq 1 ]; then
-    # if SUDO_USER environment variable is defined
-    if [ -n $SUDO_USER ]; then
+    # if SUDO_USER environment variable is not empty
+    if [ "x$SUDO_USER" != "x" ]; then
 	HOMEDIR="$(getent passwd $SUDO_USER | cut -d':' -f6)"
 	USERDIR="$HOMEDIR/.$APPNAME"
 	[ ! -d $USERDIR ] && createUserConf
