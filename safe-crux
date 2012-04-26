@@ -356,7 +356,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # static variables
 readonly APPNAME="$(basename $0)"
-readonly APPVERSION="2.7.2"
+readonly APPVERSION="2.7.3"
 
 # variables that can be overriden by the config file
 TMPDIR="$(mktemp -d)"
