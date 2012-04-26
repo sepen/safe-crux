@@ -1,0 +1,11 @@
+name=safe-crux
+version=$(./safe-crux version | cut -d' ' -f2 | sed 's|v||')
+release=1
+
+unpack_source() {
+  cp -r `pwd`/{Makefile,safe-crux*,bin,doc,etc,man} $SRC
+}
+
+build() {
+  make MANDIR=/usr/man DESTDIR=$PKG install
+}

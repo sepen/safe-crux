@@ -1,0 +1,22 @@
+
+INSTALL
+
+
+To install in your system just type:
+
+  $ make
+  $ sudo make install
+
+or maybe
+
+  $ sudo make install DESTDIR=/opt
+
+
+If you want to create a CRUX package:
+
+  $ pkgmk
+
+or better
+
+  $ fakeroot pkgmk
+
