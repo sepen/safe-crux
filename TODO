@@ -13,7 +13,35 @@ TODO
 
 [safe-crux]
 
-  - optionally use one directory instead of an image
+  - optionally use one directory instead of an image ***DONE***
+
+  - be possible to pass commands directly to safe-crux, like:
+    $ safe-crux use /dev/sdb1 prt-get sysup
+
+  - implement 'list' command to get a list of available safe-crux's targets
+    this list must contain safe-crux's images stored in IMGDIR
+    $ safe-crux list
+    crux-2.6
+    crux-2.7
+    crux-2.7-devel
+    crux-2.7-xfce
+
+  - for the future we could implement more features to 'list' command:
+    - use a data file containing all the targets that success to call
+      safe-crux with 'use' command
+    - check the path to every target and discard if not exists
+    - to avoid that data file grows a lot we can use a config var like
+      DATASIZE=100 # number of target lines stored in data file
+    $ safe-crux list
+    crux-2.6
+    crux-2.7
+    crux-2.7-devel
+    crux-2.7-xfce
+    /dev/sdb1
+    /home/sepen/crux-newglibc-test
+    /srv/backup/safe-crux-images/lenovo-2.6.39.1
+
+  - write a bash_completion file
 
 
 [documentation]
@@ -34,20 +62,13 @@ TODO
   - create a Makefile for installations like this: (due to 2.7.3) ***WORK IN PROGRESS***
 
     /usr/bin/safe-crux
-    /usr/etc/safe-crux.conf
+    /usr/bin/scx ---> safe-crux
     /usr/man/man8/safe-crux.8.gz
+    /usr/share/safe-crux/safe-crux
+    /usr/share/safe-crux/etc/safe-crux.conf
     /usr/share/safe-crux/bin/*
     /usr/share/safe-crux/doc/*
     /usr/share/safe-crux/addons/*
-
-    from the script we should try to read first the user config file
-    which is an overlay for configuration variables:
-    ~/.safe-crux.conf
-
-    and also the first time we must to create all required directories:
-    ~/.safe-crux/mnt
-    ~/.safe-crux/iso
-    ~/.safe-crux/img
 
 
   - example of installation with PREFIX=/usr
@@ -63,12 +84,6 @@ TODO
     |       `-- safe-crux.8.gz
     `-- share
         `-- safe-crux
-            |-- addons
-            |   |-- bin
-            |   |   |-- fakelogin
-            |   |   `-- prt-clean
-            |   `-- man
-            |       `-- prt-clean.1
             |-- bin
             |   |-- chrooted
             |   `-- fakesetup
@@ -79,23 +94,5 @@ TODO
             |   `-- HOWTO-Working-with-prt-clean.txt
             `-- safe-crux
 
-* BUG: localtime
 
-bash-4.2# date
-Mon Mar 12 02:17:16 UTC 2012
-bash-4.2# exit
-exit
-+ Unmounting target /dev/hda1 ...
-/dev/hda1 has been unmounted
-sepen@barebone:~/devel/crux/tools/safe-crux $ date
-Mon Mar 12 03:17:18 CET 2012
-
- ---> solucion posible, borrarlo y copiar el del host
-
-sepen@barebone:~/devel/crux/tools/safe-crux $ sudo rm -vf mnt/hda1/etc/localtime
-removed `mnt/hda1/etc/localtime'
-sepen@barebone:~/devel/crux/tools/safe-crux $ sudo cp -av /etc/localtime mnt/hda1/etc/
-`/etc/localtime' -> `mnt/hda1/etc/localtime'
-sepen@barebone:~/devel/crux/tools/safe-crux $ sudo ls -la mnt/hda1/etc/localtime
-lrwxrwxrwx 1 root root 33 Mar 11 19:15 mnt/hda1/etc/localtime -> /usr/share/zoneinfo/Europe/Madrid
 

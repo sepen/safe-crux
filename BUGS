@@ -1,0 +1,26 @@
+
+BUGS
+
+
+[localtime]
+
+- Localtime is wrong on the running safe-crux because never was
+configured from system initialization script: /etc/rc
+
+bash-4.2# date
+Mon Mar 12 02:17:16 UTC 2012
+bash-4.2# exit
+exit
++ Unmounting target /dev/hda1 ...
+/dev/hda1 has been unmounted
+sepen@barebone:~/devel/crux/tools/safe-crux $ date
+Mon Mar 12 03:17:18 CET 2012
+
+- To fix that we can just do something like:
+
+one:~/devel/crux/tools/safe-crux $ sudo rm -vf mnt/hda1/etc/localtime
+removed `mnt/hda1/etc/localtime'
+sepen@barebone:~/devel/crux/tools/safe-crux $ sudo cp -av /etc/localtime mnt/hda1/etc/
+`/etc/localtime' -> `mnt/hda1/etc/localtime'
+sepen@barebone:~/devel/crux/tools/safe-crux $ sudo ls -la mnt/hda1/etc/localtime
+lrwxrwxrwx 1 root root 33 Mar 11 19:15 mnt/hda1/etc/localtime -> /usr/share/zoneinfo/Europe/Madrid
