@@ -22,6 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+#
+# Functions
+#
 
 msgError() {
   echo "Error, $@" 2>&1
@@ -88,6 +91,34 @@ getMountPoint() {
   echo "$MNTDIR/$(basename $target)"
 }
 
+#
+# Tasks
+#
+
+createUserConf() {
+    # redefine config variables
+    ISODIR="$USERDIR/iso"
+    MNTDIR="$USERDIR/mnt"
+    IMGDIR="$USERDIR/img"
+    # create dirs
+    mkdir -p $ISODIR $MNTDIR $IMGDIR
+    # create user config file
+    cat > $USERDIR/$APPNAME.conf << __EOF__
+#
+# $USERDIR/$APPNAME.conf
+#
+
+# directory where iso files are stored
+ISODIR=$ISODIR
+# directory where safe-crux's targets are mounted
+MNTDIR=$MNTDIR
+# directory containing safe-crux's images
+IMGDIR=$IMGDIR
+
+# End of file
+__EOF__
+}
+
 downloadISO() {
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
   local source_version="2.7.1"
@@ -137,6 +168,10 @@ makeFileSystem() {
   esac
 }
 
+#
+# Commands
+#
+
 scMount() {
   echo "+ Mounting target $1 ..."
   local target=$(getTarget $1)
@@ -161,7 +196,7 @@ scUmount() {
   local target=$(getTarget $1)
   local mount_point=$2
   [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
-  umount -v $mount_point && rm -r $mount_point
+  umount $mount_point && rm -r $mount_point
 }
 
 scInstall() {
@@ -199,6 +234,7 @@ scInstall() {
     downloadISO
     local file_iso="$ISODIR/${SOURCE_ISO_FILE##*/}"
     echo "+ Mounting the iso image ..."
+    mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
     mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
     local pkgdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
     [ ! -d $pkgdir ] && pkgdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
@@ -268,6 +304,10 @@ scStat() {
   done
 }
 
+#
+# Main rutine
+#
+
 main() {
   case $1 in
     install)
@@ -306,7 +346,11 @@ main() {
   esac
 }
 
-# some environment variables
+#
+# safe-crux init
+#
+
+# environment variables
 export LANG=C
 export PATH=$PATH:/sbin:/usr/sbin
 
@@ -322,9 +366,21 @@ MNTDIR="$BASEDIR/mnt"
 IMGDIR="$BASEDIR/img"
 BINDIR="$BASEDIR/bin"
 ETCDIR="$BASEDIR/etc"
+USERDIR="$HOME/.$APPNAME"
 
 # load config vars
-[ -f "$ETCDIR/$APPNAME.conf" ] && . $ETCDIR/$APPNAME.conf
+[ -f $ETCDIR/$APPNAME.conf ] && . $ETCDIR/$APPNAME.conf
+
+# load config vars overwriten by user
+if [ $USERCONF -eq 1 ]; then
+    # if SUDO_USER environment variable is defined
+    if [ -n $SUDO_USER ]; then
+	HOMEDIR="$(getent passwd $SUDO_USER | cut -d':' -f6)"
+	USERDIR="$HOMEDIR/.$APPNAME"
+	[ ! -d $USERDIR ] && createUserConf
+	[ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
+    fi
+fi
 
 # handle signals
 trap "msgError interrupted" SIGINT SIGTERM
