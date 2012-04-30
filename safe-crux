@@ -296,6 +296,9 @@ scUse() {
       # umount the mount point
       scUmount $target $mount_point
       ;;
+    null)
+      msgError "target '$1' not found"
+      ;;
   esac
 }
 
