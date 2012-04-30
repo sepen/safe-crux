@@ -117,6 +117,8 @@ IMGDIR=$IMGDIR
 
 # End of file
 __EOF__
+    # fix owner and permissions
+    chown -R $SUDO_USER:$(id -gn $SUDO_USER) $USERDIR
 }
 
 downloadISO() {
