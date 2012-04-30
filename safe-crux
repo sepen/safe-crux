@@ -44,7 +44,7 @@ msgUsage() {
   echo "  stat                     Show status for mounted images"
   echo "  list                     Show available targets and image files"
   echo "  install <target|file>    Create new environment"
-  echo "  use [target|file]        Use target or filesystem image as the environment"
+  echo "  use [target|file] <cmd>  Use target or filesystem image as the environment"
   echo "  mount [target]           Mount target or selected image as the environment"
   echo "  umount [target]          Umount the environment"
   exit 0
@@ -293,7 +293,11 @@ scUse() {
       # mount the target
       scMount $target $mount_point
       # chroot the mount point
-      $BINDIR/chrooted $mount_point $chroot_shell
+      if [ $# -gt 1 ]; then
+	shift; echo $@ | $BINDIR/chrooted $mount_point $chroot_shell
+      else
+	$BINDIR/chrooted $mount_point $chroot_shell
+      fi
       # umount the mount point
       scUmount $target $mount_point
       ;;
@@ -326,7 +330,7 @@ main() {
       scInstall $@
       ;;
     use)
-      [ $# -ne 2 ] && msgUsage
+      [ $# -lt 2 ] && msgUsage
       checkUID
       shift 1
       scUse $@
