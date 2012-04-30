@@ -42,9 +42,10 @@ msgUsage() {
   echo "  help                     Show this help information"
   echo "  version                  Show version information"
   echo "  stat                     Show status for mounted images"
+  echo "  list                     Show available targets and image files"
   echo "  install <target|file>    Create new environment"
-  echo "  use [target|file]        Use the filesystem image as the environment"
-  echo "  mount [target]           Mount the selected image as the environment"
+  echo "  use [target|file]        Use target or filesystem image as the environment"
+  echo "  mount [target]           Mount target or selected image as the environment"
   echo "  umount [target]          Umount the environment"
   exit 0
 }
@@ -302,6 +303,10 @@ scUse() {
   esac
 }
 
+scList() {
+  find $IMGDIR -type f ! -iname '.*' -exec basename {} \;
+}
+
 scStat() {
   sudo ps u | grep chrooted \
   | while read a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 foo; do
@@ -337,6 +342,10 @@ main() {
       checkUID
       shift 1
       scUmount $@
+      ;;
+    list)
+      checkUID
+      scList
       ;;
     stat)
       checkUID
