@@ -340,7 +340,7 @@ scList() {
       fi
     done
     cat $target_list_file
-  ) | sort -n | tac
+  ) | sed -e "s|$IMGDIR/||" -e "s|$IMGDIR||" | sort -n | tac
 }
 
 scStat() {
