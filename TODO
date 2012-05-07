@@ -13,32 +13,6 @@ TODO
 
 [safe-crux]
 
-  - be possible to pass commands directly to safe-crux, like:
-    $ safe-crux use /dev/sdb1 prt-get sysup
-
-  - implement 'list' command to get a list of available safe-crux's targets
-    this list must contain safe-crux's images stored in IMGDIR
-    $ safe-crux list
-    crux-2.6
-    crux-2.7
-    crux-2.7-devel
-    crux-2.7-xfce
-
-  - for the future we could implement more features to 'list' command:
-    - use a data file containing all the targets that success to call
-      safe-crux with 'use' command
-    - check the path to every target and discard if not exists
-    - to avoid that data file grows a lot we can use a config var like
-      DATASIZE=100 # number of target lines stored in data file
-    $ safe-crux list
-    crux-2.6
-    crux-2.7
-    crux-2.7-devel
-    crux-2.7-xfce
-    /dev/sdb1
-    /home/sepen/crux-newglibc-test
-    /srv/backup/safe-crux-images/lenovo-2.6.39.1
-
   - write a bash_completion file
 
 
