@@ -171,6 +171,20 @@ makeFileSystem() {
   esac
 }
 
+updateTargetList() {
+  local target="$1"
+  local target_list_file="$MNTDIR/.targets"
+  local date="$(date +'%F')"
+  # check if was previously added
+  if grep -e "$target$" $target_list_file >/dev/null 2>&1; then
+    # update target line with the new date
+    sed -e "s|.* $target|$date - $target|" -i $target_list_file
+  else
+    # append target line
+    echo "$date - $target" >> $target_list_file
+  fi
+}
+
 #
 # Commands
 #
@@ -286,6 +300,7 @@ scUse() {
     dir)
       # chroot the dir
       $BINDIR/chrooted $target $chroot_shell
+      [ $? -eq 0 ] && updateTargetList $target
       ;;
     file|block)
       # obtain a mount point where target will be mounted
@@ -297,6 +312,7 @@ scUse() {
 	shift; echo $@ | $BINDIR/chrooted $mount_point $chroot_shell
       else
 	$BINDIR/chrooted $mount_point $chroot_shell
+	[ $? -eq 0 ] && updateTargetList $target
       fi
       # umount the mount point
       scUmount $target $mount_point
@@ -308,7 +324,15 @@ scUse() {
 }
 
 scList() {
-  find $IMGDIR -type f ! -iname '.*' -exec basename {} \;
+  local target_list_file="$MNTDIR/.targets"
+  (
+    for target in $(find $IMGDIR -type f ! -iname '.*' -exec basename {} \;); do
+      if ! grep -e "$target$" $target_list_file >/dev/null 2>&1; then
+	echo "Never used - $target"
+      fi
+    done
+    cat $target_list_file
+  ) | sort -u
 }
 
 scStat() {
