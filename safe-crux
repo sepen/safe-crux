@@ -173,15 +173,22 @@ makeFileSystem() {
 
 updateTargetList() {
   local target="$1"
+  local error="$2"
   local target_list_file="$MNTDIR/.targets"
-  local date="$(date +'%F')"
-  # check if was previously added
-  if grep -e "$target$" $target_list_file >/dev/null 2>&1; then
-    # update target line with the new date
-    sed -e "s|.* $target|$date - $target|" -i $target_list_file
+  local date="$(date +'%F %T')"
+  if [ "x$error" == "x0" ]; then
+    # check if was previously added
+    if grep -e "$target$" $target_list_file >/dev/null 2>&1; then
+      # update target line with the new date
+      sed -e "s|.* $target$|$date - $target|" -i $target_list_file
+    else
+      # append target line
+      echo "$date - $target" >> $target_list_file
+    fi
   else
-    # append target line
-    echo "$date - $target" >> $target_list_file
+    # remove target line
+    sed -e "s|.* $target$||" -i $target_list_file
+    sed -e '/^$/d' -i $target_list_file
   fi
 }
 
@@ -300,7 +307,7 @@ scUse() {
     dir)
       # chroot the dir
       $BINDIR/chrooted $target $chroot_shell
-      [ $? -eq 0 ] && updateTargetList $target
+      updateTargetList $1 $?
       ;;
     file|block)
       # obtain a mount point where target will be mounted
@@ -312,12 +319,13 @@ scUse() {
 	shift; echo $@ | $BINDIR/chrooted $mount_point $chroot_shell
       else
 	$BINDIR/chrooted $mount_point $chroot_shell
-	[ $? -eq 0 ] && updateTargetList $target
       fi
+      updateTargetList $1 $?
       # umount the mount point
       scUmount $target $mount_point
       ;;
     null)
+      updateTargetList $1 1
       msgError "target '$1' not found"
       ;;
   esac
@@ -332,7 +340,7 @@ scList() {
       fi
     done
     cat $target_list_file
-  ) | sort -u
+  ) | sort -n | tac
 }
 
 scStat() {
