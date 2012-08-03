@@ -301,12 +301,11 @@ scInstall() {
 scUse() {
   local target=$(getTarget $1)
   local target_type=$(getTargetType $target)
-  local chroot_shell="/usr/bin/env -i HOME=/root /bin/bash"
   # decide what to do
   case $target_type in
     dir)
       # chroot the dir
-      $BINDIR/chrooted $target $chroot_shell
+      $BINDIR/chrooted $target $CHROOTSHELL
       updateTargetList $1 $?
       ;;
     file|block)
@@ -316,9 +315,9 @@ scUse() {
       scMount $target $mount_point
       # chroot the mount point
       if [ $# -gt 1 ]; then
-	shift; echo $@ | $BINDIR/chrooted $mount_point $chroot_shell
+	shift; echo $@ | $BINDIR/chrooted $mount_point $CHROOTSHELL
       else
-	$BINDIR/chrooted $mount_point $chroot_shell
+	$BINDIR/chrooted $mount_point $CHROOTSHELL
       fi
       updateTargetList $1 $?
       # umount the mount point
@@ -417,6 +416,7 @@ IMGDIR="$BASEDIR/img"
 BINDIR="$BASEDIR/bin"
 ETCDIR="$BASEDIR/etc"
 USERDIR="$HOME/.$APPNAME"
+CHROOTSHELL="/bin/bash"
 
 # load config vars
 [ -f $ETCDIR/$APPNAME.conf ] && . $ETCDIR/$APPNAME.conf
