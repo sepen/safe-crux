@@ -15,10 +15,9 @@ msgError() {
 }
 
 main() {
-  local FS
-  # before ...
+  # mount subdirs proc,dev,sys,tmp before chroot
   for FS in dev proc sys tmp dev/pts; do
-    if ! mount | grep $CHROOTFS/$FS >/dev/null 2>&1; then
+    if ! mountpoint -q $CHROOTFS/$FS; then
       case $FS in
         dev|proc) mount --bind /$FS $CHROOTFS/$FS ;;
         sys|tmp) mount -t ${FS}fs ${FS}fs $CHROOTFS/$FS ;;
@@ -26,12 +25,16 @@ main() {
       esac
     fi
   done
-  # do chroot
+  # chroot
   chroot $CHROOTFS $@
-  # on exit ...
-  for FS in dev/pts tmp sys proc dev; do
-    umount $CHROOTFS/$FS
-  done
+  # check for other running sessions for the same CHROOTFS
+  COUNT=$(fuser $CHROOTFS 2>/dev/null | wc -w)
+  if [ $COUNT -eq 0 ]; then
+    # umount all subdirs after chroot
+    for FS in dev/pts tmp sys proc dev; do
+      umount $CHROOTFS/$FS
+    done
+  fi
 }
 
 [ $# -lt 1 ] && msgUsage
