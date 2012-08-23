@@ -244,8 +244,16 @@ scUmount() {
 
 scInstall() {
   local use_iso=1
-  local target=$IMGDIR/crux
-  [ ! -z $1 ] && target=$1
+  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  # check if target is passed as argument
+  if [ ! -z $1 ]; then
+    # check if no absolute path is given
+    if [ "$(basename $1)" == "$1" ]; then
+      target=$IMGDIR/$1
+    else
+      target=$1
+    fi
+  fi
   local target_type=$(getTargetType $target)
   local mount_point=$2
   [ -z $mount_point ] && mount_point=$(getMountPoint $target)
@@ -356,7 +364,7 @@ scStat() {
   if [ ! -f $target_list_file ]; then
     touch $target_list_file
   else
-    sed 's/|/ - /g' $target_list_file
+    cut -d'|' -f2- $target_list_file | sed 's/|/ - /g/'
   fi
 }
 
