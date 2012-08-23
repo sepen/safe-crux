@@ -40,8 +40,13 @@ REQUERIMENTS
   You need internet access, if not then you should place the iso and md5sum
   you selected in etc/safe-crux.conf into the ./iso directory
 
-  Also you need a linux kernel greater or equal than 2.6.27 to use versions of
-  CRUX's iso greater or equal than CRUX 2.6
+  Also in your host you need to run a linux kernel greater or equal than the
+  built for the toolchain to use. For CRUX's versions greater or equal than:
+  
+  [2.8] kernel >= 2.6.39
+  [2.7] kernel >= 2.6.27
+  [2.6] kernel >= 2.6.27
+  [2.5] kernel >= 2.6.16
 
 
 AUTHORS
