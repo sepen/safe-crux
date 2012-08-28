@@ -364,7 +364,7 @@ scStat() {
   if [ ! -f $target_list_file ]; then
     touch $target_list_file
   else
-    cut -d'|' -f2- $target_list_file | sed 's/|/ - /g/'
+    cut -d'|' -f2- $target_list_file | sed 's/|/ - /g'
   fi
 }
 
