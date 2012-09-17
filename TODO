@@ -3,37 +3,7 @@ TODO
 
 [safe-crux]
 
-  - fix issue for more than one session in concurrency of the same target
-
-    - after a session is started for a target, the second one, and next ones
-      must check if there is already a running session, that means to check
-      for mounted partitions
-      $ safe-crux use /dev/sda2
-      + Mounting target /dev/sda2 ...
-      mount: /dev/sda2 already mounted or /home/sepen/.safe-crux/mnt/sda2 busy
-      mount: according to mtab, /dev/sda2 is already mounted on /home/sepen/.safe-crux/mnt/sda2
-
-    - also before exit from a session, it must check for running sessions
-      before trying to umount partitions like proc, sys, dev, ...
-      # exit
-      exit
-      + Unmounting target /dev/sda2 ...
-      umount: /home/sepen/.safe-crux/mnt/sda2: device is busy.
-          (In some cases useful info about processes that use
-           the device is found by lsof(8) or fuser(1))
-      anyways it tries to umount all mounted partitions like proc, sys, dev, ...
-      so later, when the last session ends you'll have a not clean scenario
-      # exit
-      exit
-      umount: /home/sepen/.safe-crux/mnt/sda2/dev/pts: not found
-      umount: /home/sepen/.safe-crux/mnt/sda2/tmp: not mounted
-      umount: /home/sepen/.safe-crux/mnt/sda2/sys: not mounted
-      umount: /home/sepen/.safe-crux/mnt/sda2/proc: not mounted
-      umount: /home/sepen/.safe-crux/mnt/sda2/dev: not mounted
-      + Unmounting target /dev/sda2 ...
-
-  - implement 'list' command to get a list of available safe-crux's targets
-    this list must contain safe-crux's images stored in IMGDIR
+  - integrate upstream setup script
 
   - write a bash_completion file
 
