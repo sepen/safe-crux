@@ -304,8 +304,8 @@ scInstall() {
       fi
     fi
   fi
-  # call the fakesetup
-  $BINDIR/fakesetup $pkgdir $mount_point --with-pkgadd=$pkgadd
+  # call the fakeinstall
+  $BINDIR/fakeinstall $pkgdir $mount_point --with-pkgadd=$pkgadd
   if [ $? -eq 0 ]; then
     echo "+ Installing extra stuff ..."
     install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
