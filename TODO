@@ -4,6 +4,8 @@ TODO
 [safe-crux]
 
   - integrate upstream setup script
+    - flag to avoid copy kernel sources
+    - fix stuff copied from host (resolv.conf, etc.)
 
   - write a bash_completion file
 
