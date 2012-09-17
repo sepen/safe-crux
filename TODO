@@ -6,6 +6,8 @@ TODO
   - integrate upstream setup script
     - flag to avoid copy kernel sources
     - fix stuff copied from host (resolv.conf, etc.)
+    - pass size for mkimage as argument since setup will require more/less
+      space to finish without errors (kernel its copied during install)
 
   - write a bash_completion file
 
