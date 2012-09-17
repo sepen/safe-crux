@@ -244,6 +244,20 @@ scUmount() {
   fi
 }
 
+scMkImage() {
+  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  # check if target is passed as argument
+  if [ ! -z $1 ]; then
+    # check if no absolute path is given
+    if [ "$(basename $1)" == "$1" ]; then
+      target=$IMGDIR/$1
+    else
+      target=$1
+    fi
+    makeImageFile $target
+  fi
+}
+
 scInstall() {
   local use_iso=1
   local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
@@ -376,6 +390,11 @@ scStat() {
 
 main() {
   case $1 in
+    mkimage)
+      checkUID
+      shift 1
+      scMkImage $@
+      ;;
     install)
       checkUID
       shift 1
