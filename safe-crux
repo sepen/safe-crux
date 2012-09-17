@@ -26,13 +26,19 @@
 # Functions
 #
 
+delTmpDir() {
+  rm -rf $TMPDIR
+}
+
 msgError() {
   echo "Error, $@" 2>&1
+  delTmpDir
   exit 1
 }
 
 msgVersion() {
   echo "$APPNAME v$APPVERSION by Jose V Beneyto and Victor Martinez"
+  delTmpDir
   exit 0
 }
 
@@ -53,6 +59,7 @@ msgUsage() {
   echo "  path to a image file (i.e: /home/foo/crux-testfile.ext3)"
   echo "  path to a block device (i.e: /dev/sdb1)"
   echo "  name of image file under \$IMGDIR (i.e: crux-testfile2)"
+  delTmpDir
   exit 0
 }
 
@@ -154,7 +161,7 @@ makeImageFile() {
     [ "$answer" == "y" ] && rm -vf $imgfile
   fi
   echo "+ Getting some space for the filesystem image. Please wait ..."
-  local imgsize="512000" # 512M
+  local imgsize="512000" # 500M (500 x 1024)
   [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
   dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
 }
@@ -258,6 +265,74 @@ scMkImage() {
   fi
 }
 
+scSetup() {
+  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  # check if target is passed as argument
+  if [ ! -z $1 ]; then
+    # check if no absolute path is given
+    if [ "$(basename $1)" == "$1" ]; then
+      target=$IMGDIR/$1
+    else
+      target=$1
+    fi
+  fi
+  local target_type=$(getTargetType $target)
+  local mount_point=$2
+  [ -z $mount_point ] && mount_point=$(getMountPoint $target)
+  case $target_type in
+    block|null|file)
+      if [ $target_type != "block" ]; then
+        # target still not exists, so we should create a new image file
+	IMAGE_SIZE="1024000" # 1G (kernel requires space)
+        makeImageFile $target
+      fi
+      makeFileSystem $target
+      scMount $target $mount_point && rm -r $mount_point/lost+found
+      ;;
+    dir)
+      # we will install in a directory
+      mount_point=$target
+      ;;
+  esac
+  echo "+ Running the install ..."
+  downloadISO
+  local file_iso="$ISODIR/${SOURCE_ISO_FILE##*/}"
+  echo "+ Mounting the iso image ..."
+  mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
+  mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
+  set -x
+  # prepare setup stuff
+  cd $TMPDIR
+  $ISODIR/mnt/tools/unsquashfs $ISODIR/mnt/crux.squashfs
+  # setup-helper, setup.dependencies, setup, crux_dir
+  ln -s squashfs-root/usr/bin/setup-helper .
+  ln -s squashfs-root/usr/bin/setup .
+  sed -i setup \
+    -e "s|/usr/bin|$TMPDIR|g" \
+    -e "s|crux_dir=.*|crux_dir=$ISODIR/mnt/crux|g" \
+    -e "s|select_root$|ROOT=$mount_point|g"
+  # call the setup
+  set +x
+  $TMPDIR/setup
+  if [ $? -eq 0 ]; then
+    #echo "+ Installing extra stuff ..."
+    #install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
+    #install -D -m 0644 /etc/hosts $mount_point/etc/hosts
+    if [ $use_iso -eq 1 ]; then
+      install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
+    fi
+  fi
+  # umount the iso
+  echo "+ Unmounting the iso image ..."
+  umount $ISODIR/mnt
+  # umount the target if a directory was not used
+  case $target_type in
+    block|null|file)
+      scUmount $target $mount_point
+      ;;
+  esac
+}
+
 scInstall() {
   local use_iso=1
   local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
@@ -287,7 +362,7 @@ scInstall() {
       mount_point=$target
       ;;
   esac
-  echo "+ Running the setup ..."
+  echo "+ Running the install ..."
   local pkgdir
   [ ! -z $PACKAGE_DIR ] && pkgdir=$PACKAGE_DIR
   local pkgadd
@@ -328,12 +403,12 @@ scInstall() {
       install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
     fi
   fi
-  # umount the iso if was used 
+  # umount the iso if it was used
   if [ $use_iso -eq 1 ]; then
     echo "+ Unmounting the iso image ..."
     umount $ISODIR/mnt
   fi
-  # umount the target if a directory not was used
+  # umount the target if a directory was not used
   case $target_type in
     block|null|file)
       scUmount $target $mount_point
@@ -394,6 +469,11 @@ main() {
       checkUID
       shift 1
       scMkImage $@
+      ;;
+    setup)
+      checkUID
+      shift
+      scSetup $@
       ;;
     install)
       checkUID
@@ -473,5 +553,8 @@ trap "msgError interrupted" SIGINT SIGTERM
 
 # call the main rutine
 main $@
+
+# remove tmp stuff
+delTmpDir
 
 # End of file
