@@ -318,9 +318,7 @@ scSetup() {
     #echo "+ Installing extra stuff ..."
     #install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
     #install -D -m 0644 /etc/hosts $mount_point/etc/hosts
-    if [ $use_iso -eq 1 ]; then
-      install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
-    fi
+    install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
   fi
   # umount the iso
   echo "+ Unmounting the iso image ..."
