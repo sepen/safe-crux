@@ -223,13 +223,13 @@ scMount() {
     # decide what to do
     case $target_type in
       file)
-	mkdir -p $mount_point
-	mount -o loop,rw $target $mount_point
-	;;
+        mkdir -p $mount_point
+        mount -o loop,rw $target $mount_point
+        ;;
       block)
-	mkdir -p $mount_point
-	mount -o rw $target $mount_point
-	;;
+        mkdir -p $mount_point
+        mount -o rw $target $mount_point
+        ;;
     esac
   fi
 }
@@ -283,7 +283,7 @@ scSetup() {
     block|null|file)
       if [ $target_type != "block" ]; then
         # target still not exists, so we should create a new image file
-	IMAGE_SIZE="1024000" # 1G (kernel requires space)
+        IMAGE_SIZE="1024000" # 1G (kernel requires space)
         makeImageFile $target
       fi
       makeFileSystem $target
@@ -433,10 +433,10 @@ scUse() {
       scMount $target $mount_point
       # chroot the mount point
       if [ $# -gt 1 ]; then
-	# pass user commands to the environment
-	shift; echo $@ | $BINDIR/chrooted $mount_point $CHROOTSHELL
+        # pass user commands to the environment
+        shift; echo $@ | $BINDIR/chrooted $mount_point $CHROOTSHELL
       else
-	$BINDIR/chrooted $mount_point $CHROOTSHELL
+        $BINDIR/chrooted $mount_point $CHROOTSHELL
       fi
       # umount the mount point
       scUmount $target $mount_point
@@ -539,10 +539,10 @@ CHROOTSHELL="/bin/bash"
 if [ $USERCONF -eq 1 ]; then
     # if SUDO_USER environment variable is not empty
     if [ "x$SUDO_USER" != "x" ]; then
-	HOMEDIR="$(getent passwd $SUDO_USER | cut -d':' -f6)"
-	USERDIR="$HOMEDIR/.$APPNAME"
-	[ ! -d $USERDIR ] && createUserConf
-	[ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
+      HOMEDIR="$(getent passwd $SUDO_USER | cut -d':' -f6)"
+      USERDIR="$HOMEDIR/.$APPNAME"
+      [ ! -d $USERDIR ] && createUserConf
+      [ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
     fi
 fi
 
