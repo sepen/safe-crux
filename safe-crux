@@ -54,6 +54,7 @@ msgUsage() {
   echo "  use     [target] <cmd>   Use an environment (optionally: execute 'cmd')"
   echo "  mount   [target]         Mount an environment"
   echo "  umount  [target]         Umount an environment"
+  echo "  env                      Show environment variables for safe-crux"
   echo "Where target can be one of this:"
   echo "  path to a directory (i.e: /tmp/crux-testdir)"
   echo "  path to a image file (i.e: /home/foo/crux-testfile.ext3)"
@@ -456,6 +457,28 @@ scStat() {
   fi
 }
 
+scEnv() {
+  printf "%-20s: %s\n" "APPNAME" "$APPNAME"
+  printf "%-20s: %s\n" "APPVERSION" "$APPVERSION"
+  printf "%-20s: %s\n" "TMPDIR" "$TMPDIR"
+  printf "%-20s: %s\n" "BASEDIR" "$BASEDIR"
+  printf "%-20s: %s\n" "ISODIR" "$ISODIR"
+  printf "%-20s: %s\n" "MNTDIR" "$MNTDIR"
+  printf "%-20s: %s\n" "IMGDIR" "$IMGDIR"
+  printf "%-20s: %s\n" "BINDIR" "$BINDIR"
+  printf "%-20s: %s\n" "ETCDIR" "$ETCDIR"
+  printf "%-20s: %s\n" "USERDIR" "$USERDIR"
+  printf "%-20s: %s\n" "USERCONF" "$USERCONF"
+  printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
+  printf "%-20s: %s\n" "SOURCE_ISO_VERSION" "$SOURCE_ISO_VERSION"
+  printf "%-20s: %s\n" "SOURCE_ISO_FILE" "$SOURCE_ISO_FILE"
+  printf "%-20s: %s\n" "SOURCE_MD5_FILE" "$SOURCE_MD5_FILE"
+  printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
+  printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
+  [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
+  [ ! -z $PACKAGE_DIR ] && printf "%-20s: %s\n" "PACKAGE_DIR" "$PACKAGE_DIR"
+}
+
 #
 # Main rutine
 #
@@ -498,6 +521,9 @@ main() {
     stat)
       checkUID
       scStat
+      ;;
+    env)
+      scEnv
       ;;
     version)
       msgVersion
