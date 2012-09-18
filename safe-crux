@@ -286,6 +286,7 @@ scSetup() {
       # target still not exists, so we should create a new image file
       IMAGE_SIZE="1024000" # 1G (kernel requires space)
       scMkImage $target
+      scMount $target $mount_point && rm -rf $mount_point/lost+found
       ;;
     block|file)
       scMount $target $mount_point
@@ -300,7 +301,6 @@ scSetup() {
   echo "+ Mounting the iso image ..."
   mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
   mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
-  set -x
   # prepare setup stuff
   cd $TMPDIR
   $ISODIR/mnt/tools/unsquashfs $ISODIR/mnt/crux.squashfs
@@ -312,7 +312,6 @@ scSetup() {
     -e "s|crux_dir=.*|crux_dir=$ISODIR/mnt/crux|g" \
     -e "s|select_root$|ROOT=$mount_point|g"
   # call the setup
-  set +x
   $TMPDIR/setup
   if [ $? -eq 0 ]; then
     #echo "+ Installing extra stuff ..."
