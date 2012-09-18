@@ -262,6 +262,7 @@ scMkImage() {
       target=$1
     fi
     makeImageFile $target
+    makeFileSystem $target
   fi
 }
 
@@ -280,17 +281,15 @@ scSetup() {
   local mount_point=$2
   [ -z $mount_point ] && mount_point=$(getMountPoint $target)
   case $target_type in
-    block|null|file)
-      if [ $target_type != "block" ]; then
-        # target still not exists, so we should create a new image file
-        IMAGE_SIZE="1024000" # 1G (kernel requires space)
-        makeImageFile $target
-      fi
-      makeFileSystem $target
-      scMount $target $mount_point && rm -r $mount_point/lost+found
+    null)
+      # target still not exists, so we should create a new image file
+      IMAGE_SIZE="1024000" # 1G (kernel requires space)
+      scMkImage $target
+      ;;
+    block|file)
+      scMount $target $mount_point
       ;;
     dir)
-      # we will install in a directory
       mount_point=$target
       ;;
   esac
