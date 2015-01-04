@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Copyright (c) 2007 - 2012
-#   Jose V Beneyto, <sepen@crux.nu>
-#   Victor Martinez, <pitillo@ono.com>
+# Copyright (c) 2007 - 2013
+# by Jose V Beneyto, <sepen@crux.nu>
+# by Victor Martinez, <pitillo@ono.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ msgError() {
 }
 
 msgVersion() {
-  echo "$APPNAME v$APPVERSION by Jose V Beneyto and Victor Martinez"
+  echo "$APPNAME $APPVERSION by Jose V Beneyto and Victor Martinez"
   delTmpDir
   exit 0
 }
@@ -138,19 +138,21 @@ __EOF__
 
 downloadISO() {
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local source_version="2.7.1"
-  [ ! -z $SOURCE_ISO_VERSION ] && source_version="$SOURCE_ISO_VERSION"
-  local source_iso="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.iso"
-  local source_md5="ftp://code-monkey.de/pub/crux/crux-$source_version/iso/crux-$source_version.md5"
-  [ ! -z $SOURCE_ISO_FILE ] && source_iso="$SOURCE_ISO_FILE"
-  [ ! -z $SOURCE_MD5_FILE ] && source_md5="$SOURCE_MD5_FILE"
-  local file_iso="$ISODIR/${source_iso##*/}"
-  local file_md5="$ISODIR/${source_md5##*/}"
+  local iso_version="3.0"
+  [ ! -z $ISO_VERSION ] && iso_version="$ISO_VERSION"
+  local iso_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.iso"
+  local iso_md5_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.md5"
+  [ ! -z $ISO_FILE ] && iso_file="$ISO_FILE"
+  [ ! -z $ISO_MD5_FILE ] && iso_md5_file="$ISO_MD5_FILE"
+  echo "iso_file: $iso_file"
+  local iso_local_file="$ISODIR/${iso_file##*/}"
+  local iso_local_md5_file="$ISODIR/${iso_md5_file##*/}"
+  echo "iso_file: $iso_local_file"
   [ ! "$(type -p wget)" ] && msgError "command 'wget' not found"
-  [ ! -f $file_iso ] && wget $wget_options $source_iso
-  [ ! -f $file_md5 ] && wget $wget_options $source_md5
+  [ ! -f $iso_file ] && wget $wget_options $iso_file
+  [ ! -f $iso_md5_file ] && wget $wget_options $iso_md5_file
   echo "+ Checking md5sum ..."
-  checkMD5 $file_md5
+  checkMD5 $iso_local_md5_file
 }
 
 makeImageFile() {
@@ -253,7 +255,7 @@ scUmount() {
 }
 
 scMkImage() {
-  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
   if [ ! -z $1 ]; then
     # check if no absolute path is given
@@ -268,7 +270,7 @@ scMkImage() {
 }
 
 scSetup() {
-  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
   if [ ! -z $1 ]; then
     # check if no absolute path is given
@@ -297,10 +299,10 @@ scSetup() {
   esac
   echo "+ Running the install ..."
   downloadISO
-  local file_iso="$ISODIR/${SOURCE_ISO_FILE##*/}"
+  local iso_file="$ISODIR/${ISO_FILE##*/}"
   echo "+ Mounting the iso image ..."
   mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
-  mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
+  mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
   echo "+ Preparing the setup ..."
   # prepare setup stuff (setup-helper, setup.dependencies, setup, crux_dir)
   cd $TMPDIR
@@ -355,7 +357,7 @@ scSetup() {
 
 scInstall() {
   local use_iso=1
-  local target=$IMGDIR/crux-$SOURCE_ISO_VERSION
+  local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
   if [ ! -z $1 ]; then
     # check if no absolute path is given
@@ -394,10 +396,10 @@ scInstall() {
     use_iso=1
     # now we must obtain pkgdir and pkgadd from the iso
     downloadISO
-    local file_iso="$ISODIR/${SOURCE_ISO_FILE##*/}"
+    local iso_file="$ISODIR/${ISO_FILE##*/}"
     echo "+ Mounting the iso image ..."
     mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
-    mount -o loop,ro -t iso9660 $file_iso $ISODIR/mnt
+    mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
     local pkgdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
     [ ! -d $pkgdir ] && pkgdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
     local pkgadd=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
@@ -492,9 +494,9 @@ scEnv() {
   printf "%-20s: %s\n" "USERDIR" "$USERDIR"
   printf "%-20s: %s\n" "USERCONF" "$USERCONF"
   printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
-  printf "%-20s: %s\n" "SOURCE_ISO_VERSION" "$SOURCE_ISO_VERSION"
-  printf "%-20s: %s\n" "SOURCE_ISO_FILE" "$SOURCE_ISO_FILE"
-  printf "%-20s: %s\n" "SOURCE_MD5_FILE" "$SOURCE_MD5_FILE"
+  printf "%-20s: %s\n" "ISO_VERSION" "$ISO_VERSION"
+  printf "%-20s: %s\n" "ISO_FILE" "$ISO_FILE"
+  printf "%-20s: %s\n" "ISO_MD5_FILE" "$ISO_MD5_FILE"
   printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
   printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
   [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
@@ -566,7 +568,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # static variables
 readonly APPNAME="$(basename $0)"
-readonly APPVERSION="2.7.3"
+readonly APPVERSION="3.0"
 
 # variables that can be overriden by the config file
 TMPDIR="$(mktemp -d)"

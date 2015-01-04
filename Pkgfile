@@ -1,5 +1,5 @@
 name=safe-crux
-version=$(./safe-crux version | cut -d' ' -f2 | sed 's|v||')
+version=$(./safe-crux version | cut -d' ' -f2)
 release=1
 
 unpack_source() {
