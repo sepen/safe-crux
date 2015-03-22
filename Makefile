@@ -10,7 +10,7 @@ MANDIR  = $(PREFIX)/share/man
 all: clean safe-crux.wrapper
 
 clean:
-	@rm safe-crux.wrapper
+	@rm -f safe-crux.wrapper
 
 safe-crux.wrapper: safe-crux.wrapper.in
 	@sed "s|BASEDIR=.*|BASEDIR=$(DESTDIR)$(DATADIR)|" safe-crux.wrapper.in > safe-crux.wrapper
