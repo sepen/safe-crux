@@ -1,22 +1,24 @@
 
 INSTALL
 
-
-To install in your system just type:
-
+  To install:
   $ make
   $ sudo make install
 
-or maybe
-
+  or specify the installation directory:
   $ sudo make install DESTDIR=/opt
 
 
-If you want to create a CRUX package:
+SUDOERS
 
+  Add a line with your user or group in sudoers(8):
+  <user_or_group>  ALL=(ALL) NOPASSWD: /usr/share/safe-crux/scx
+
+
+PACKAGES
+
+  To create a CRUX package:
   $ pkgmk
 
-or better
-
+  or better:
   $ fakeroot pkgmk
-

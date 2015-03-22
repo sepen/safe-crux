@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Copyright (c) 2007 - 2013
-# by Jose V Beneyto, <sepen@crux.nu>
-# by Victor Martinez, <pitillo@ono.com>
+# Copyright (c) 2007 - 2015
+#   Jose V Beneyto, <sepen@crux.nu>
+#   Victor Martinez, <pitillo@ono.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -138,7 +138,7 @@ __EOF__
 
 downloadISO() {
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local iso_version="3.0"
+  local iso_version="3.1"
   [ ! -z $ISO_VERSION ] && iso_version="$ISO_VERSION"
   local iso_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.iso"
   local iso_md5_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.md5"
@@ -494,9 +494,9 @@ scEnv() {
   printf "%-20s: %s\n" "USERDIR" "$USERDIR"
   printf "%-20s: %s\n" "USERCONF" "$USERCONF"
   printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
-  printf "%-20s: %s\n" "ISO_VERSION" "$ISO_VERSION"
-  printf "%-20s: %s\n" "ISO_FILE" "$ISO_FILE"
-  printf "%-20s: %s\n" "ISO_MD5_FILE" "$ISO_MD5_FILE"
+  printf "%-20s: %s\n" "SOURCE_ISO_VERSION" "$SOURCE_ISO_VERSION"
+  printf "%-20s: %s\n" "SOURCE_ISO_FILE" "$SOURCE_ISO_FILE"
+  printf "%-20s: %s\n" "SOURCE_MD5_FILE" "$SOURCE_MD5_FILE"
   printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
   printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
   [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
@@ -568,7 +568,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # static variables
 readonly APPNAME="$(basename $0)"
-readonly APPVERSION="3.0"
+readonly APPVERSION="3.1"
 
 # variables that can be overriden by the config file
 TMPDIR="$(mktemp -d)"

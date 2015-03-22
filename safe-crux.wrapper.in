@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASEDIR=/usr/share/safe-crux
+BASEDIR=/usr/local/share/safe-crux
 
 cd $BASEDIR && sudo ./safe-crux $@
 

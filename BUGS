@@ -24,3 +24,25 @@ sepen@barebone:~/devel/crux/tools/safe-crux $ sudo cp -av /etc/localtime mnt/hda
 `/etc/localtime' -> `mnt/hda1/etc/localtime'
 sepen@barebone:~/devel/crux/tools/safe-crux $ sudo ls -la mnt/hda1/etc/localtime
 lrwxrwxrwx 1 root root 33 Mar 11 19:15 mnt/hda1/etc/localtime -> /usr/share/zoneinfo/Europe/Madrid
+
+
+[absolute path]
+
+* is not possible to use relative paths for 'scx setup'
+
+sepen@lenovo:~ $ mkdir .safe-crux/fs
+sepen@lenovo:~ $ mkdir .safe-crux/fs/crux31
+sepen@lenovo:~ $ scx setup .safe-crux/fs/crux31/
++ Checking for existing images ...
++ Getting some space for the filesystem image. Please wait ...
+dd: failed to open '.safe-crux/fs/crux31/': No such file or directory
++ Formating ...
+Error, can't format Error, can't find .safe-crux/fs/crux31/
+sepen@lenovo:~ $ scx setup /home/sepen/.safe-crux/fs/crux31
++ Running the install ...
+--2014-11-28 04:03:05--  http://serverop.de/crux/crux-3.1/iso/crux-3.1.iso
+Resolving serverop.de (serverop.de)... 144.76.89.169, 2a01:4f8:192:14c4::2
+Connecting to serverop.de (serverop.de)|144.76.89.169|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 349175808 (333M) [text/plain]
+Saving to: '/home/sepen/.safe-crux/iso/crux-3.1.iso'
