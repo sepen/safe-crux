@@ -89,7 +89,10 @@ getTarget() {
 
 getTargetType() {
   local target=$1
-  if [ -b "$target" ]; then
+  #TODO: fix how target / TARGET_TYPE works
+  if [ ! -z $TARGET_TYPE ]; then
+    echo $TARGET_TYPE
+  elif [ -b "$target" ]; then
     echo "block"
   elif [ -d "$target" ]; then
     echo "dir"
@@ -381,6 +384,10 @@ scInstall() {
       ;;
     dir)
       # we will install in a directory
+      if [ ! -d $target ]; then
+        # target still not exists, so we should create a directory
+        mkdir -p $target
+      fi
       mount_point=$target
       ;;
   esac
@@ -446,7 +453,7 @@ scUse() {
     dir)
       updateTargetList $target
       # chroot the dir
-      $BINDIR/chrooted $target $CHROOTSHELL
+      setarch $TARGET_ARCH $BINDIR/chrooted $target $CHROOTSHELL
       cleanupTargetList
       ;;
     file|block)
@@ -458,9 +465,9 @@ scUse() {
       # chroot the mount point
       if [ $# -gt 1 ]; then
         # pass user commands to the environment
-        shift; echo $@ | $BINDIR/chrooted $mount_point $CHROOTSHELL
+        shift; echo $@ | setarch $TARGET_ARCH $BINDIR/chrooted $mount_point $CHROOTSHELL
       else
-        $BINDIR/chrooted $mount_point $CHROOTSHELL
+        setarch $TARGET_ARCH $BINDIR/chrooted $mount_point $CHROOTSHELL
       fi
       # umount the mount point
       scUmount $target $mount_point
@@ -493,12 +500,14 @@ scEnv() {
   printf "%-20s: %s\n" "ETCDIR" "$ETCDIR"
   printf "%-20s: %s\n" "USERDIR" "$USERDIR"
   printf "%-20s: %s\n" "USERCONF" "$USERCONF"
+  printf "%-20s: %s\n" "TARGET_ARCH" "$TARGET_ARCH"
+  printf "%-20s: %s\n" "TARGET_TYPE" "$TARGET_TYPE"
   printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
-  printf "%-20s: %s\n" "SOURCE_ISO_VERSION" "$SOURCE_ISO_VERSION"
-  printf "%-20s: %s\n" "SOURCE_ISO_FILE" "$SOURCE_ISO_FILE"
-  printf "%-20s: %s\n" "SOURCE_MD5_FILE" "$SOURCE_MD5_FILE"
-  printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
-  printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
+  printf "%-20s: %s\n" "ISO_VERSION" "$ISO_VERSION"
+  printf "%-20s: %s\n" "ISO_FILE" "$ISO_FILE"
+  printf "%-20s: %s\n" "ISO_MD5_FILE" "$ISO_MD5_FILE"
+  [ ! -z $IMAGE_SIZE ] && printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
+  [ ! -z $IMAGE_TYPE ] && printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
   [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
   [ ! -z $PACKAGE_DIR ] && printf "%-20s: %s\n" "PACKAGE_DIR" "$PACKAGE_DIR"
 }
@@ -508,54 +517,69 @@ scEnv() {
 #
 
 main() {
+  while [ $1 ]; do
   case $1 in
     mkimage)
       checkUID
       shift 1
       scMkImage $@
+      break
       ;;
     setup)
       checkUID
       shift
       scSetup $@
+      break
       ;;
     install)
       checkUID
       shift 1
       scInstall $@
+      break
       ;;
     use)
       [ $# -lt 2 ] && msgUsage
       checkUID
       shift 1
       scUse $@
+      break
       ;;
     mount)
       [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
       scMount $@
+      break
       ;;
     umount)
       [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
       scUmount $@
+      break
       ;;
     stat)
       checkUID
       scStat
+      break
       ;;
     env)
       scEnv
+      break
       ;;
     version)
       msgVersion
+      break
+      ;;
+    -*)
+      shift
       ;;
     *)
       msgUsage
+      break
       ;;
   esac
+  done
 }
 
 #
@@ -573,13 +597,28 @@ readonly APPVERSION="3.1"
 # variables that can be overriden by the config file
 TMPDIR="$(mktemp -d)"
 BASEDIR="$(cd $(dirname $0); pwd -P)" # pwd -P: avoid all symlinks
-ISODIR="$BASEDIR/iso"
-MNTDIR="$BASEDIR/mnt"
-IMGDIR="$BASEDIR/img"
+ISODIR="$BASEDIR/.scx/iso"
+MNTDIR="$BASEDIR/.scx/mnt"
+IMGDIR="$BASEDIR/.scx/img"
 BINDIR="$BASEDIR/bin"
 ETCDIR="$BASEDIR/etc"
 USERDIR="$HOME/.$APPNAME"
+TARGET_ARCH="x86_64"
+TARGET_TYPE="file"
+USERCONF=0
 CHROOTSHELL="/bin/bash"
+
+# read runtime variables
+for arg in $@; do
+  case $arg in
+    --target-arch=*)
+      TARGET_ARCH="$(echo $arg | sed 's|--target-arch=||')"
+      ;;
+    --target-type=*)
+      TARGET_TYPE="$(echo $arg | sed 's|--target-type=||')"
+      ;;
+  esac
+done
 
 # load config vars
 [ -f $ETCDIR/$APPNAME.conf ] && . $ETCDIR/$APPNAME.conf
@@ -593,6 +632,9 @@ if [ $USERCONF -eq 1 ]; then
       [ ! -d $USERDIR ] && createUserConf
       [ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
     fi
+else
+    # create dirs if required
+    mkdir -p $ISODIR $MNTDIR $IMGDIR
 fi
 
 # handle signals
