@@ -3,6 +3,16 @@ TODO
 
 [safe-crux]
 
+  - simplify setup process by removing iso download section. if we let the
+    user to download and check the md5 of the iso, then we saved a lot of
+    logic especially during the loading phase of configuration variables
+
+    example:
+    $ scx setup --iso=~/Downloads/crux-3.2.iso --target=/mnt
+
+    that will require to refactor some pieces of code which use ISO_VERSION
+    variable
+
   - integrate upstream setup script
     - flag to avoid copy kernel sources
     - fix stuff copied from host (resolv.conf, etc.)
