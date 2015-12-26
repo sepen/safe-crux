@@ -154,8 +154,10 @@ downloadISO() {
   [ ! "$(type -p wget)" ] && msgError "command 'wget' not found"
   [ ! -f $iso_file ] && wget $wget_options $iso_file
   [ ! -f $iso_md5_file ] && wget $wget_options $iso_md5_file
-  echo "+ Checking md5sum ..."
-  checkMD5 $iso_local_md5_file
+  if [ "x$FORCE_ISO_FILE" == "x" ]; then
+    echo "+ Checking md5sum ..."
+    checkMD5 $iso_local_md5_file
+  fi
 }
 
 makeImageFile() {
@@ -216,7 +218,7 @@ cleanupTargetList() {
 # Commands
 #
 
-scMount() {
+scxMount() {
   echo "+ Mounting target $1 ..."
   local target=$(getTarget $1)
   local mount_point=$2
@@ -240,7 +242,7 @@ scMount() {
   fi
 }
 
-scUmount() {
+scxUmount() {
   echo "+ Unmounting target $1 ..."
   local target=$(getTarget $1)
   local mount_point=$2
@@ -257,7 +259,7 @@ scUmount() {
   fi
 }
 
-scMkImage() {
+scxMkImage() {
   local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
   if [ ! -z $1 ]; then
@@ -272,7 +274,7 @@ scMkImage() {
   fi
 }
 
-scSetup() {
+scxSetup() {
   local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
   if [ ! -z $1 ]; then
@@ -290,19 +292,23 @@ scSetup() {
     null)
       # target still not exists, so we should create a new image file
       IMAGE_SIZE="1024000" # 1G (kernel requires space)
-      scMkImage $target
-      scMount $target $mount_point && rm -rf $mount_point/lost+found
+      scxMkImage $target
+      scxMount $target $mount_point && rm -rf $mount_point/lost+found
       ;;
     block|file)
-      scMount $target $mount_point
+      scxMount $target $mount_point
       ;;
     dir)
       mount_point=$target
       ;;
   esac
   echo "+ Running the install ..."
-  downloadISO
   local iso_file="$ISODIR/${ISO_FILE##*/}"
+  if [ "x$FORCE_ISO_FILE" == "x" ]; then
+    downloadISO
+  else
+    iso_file="$FORCE_ISO_FILE"
+  fi
   echo "+ Mounting the iso image ..."
   mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
   mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
@@ -353,12 +359,12 @@ scSetup() {
   # umount the target if a directory was not used
   case $target_type in
     block|null|file)
-      scUmount $target $mount_point
+      scxUmount $target $mount_point
       ;;
   esac
 }
 
-scInstall() {
+scxInstall() {
   local use_iso=1
   local target=$IMGDIR/crux-$ISO_VERSION
   # check if target is passed as argument
@@ -380,7 +386,7 @@ scInstall() {
         makeImageFile $target
       fi
       makeFileSystem $target
-      scMount $target $mount_point && rm -r $mount_point/lost+found
+      scxMount $target $mount_point && rm -r $mount_point/lost+found
       ;;
     dir)
       # we will install in a directory
@@ -402,8 +408,12 @@ scInstall() {
   else
     use_iso=1
     # now we must obtain pkgdir and pkgadd from the iso
-    downloadISO
     local iso_file="$ISODIR/${ISO_FILE##*/}"
+    if [ "x$FORCE_ISO_FILE" == "x" ]; then
+        downloadISO
+    else
+        iso_file="$FORCE_ISO_FILE"
+    fi
     echo "+ Mounting the iso image ..."
     mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
     mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
@@ -440,12 +450,12 @@ scInstall() {
   # umount the target if a directory was not used
   case $target_type in
     block|null|file)
-      scUmount $target $mount_point
+      scxUmount $target $mount_point
       ;;
   esac
 }
 
-scUse() {
+scxUse() {
   local target=$(getTarget $1)
   local target_type=$(getTargetType $target)
   # decide what to do
@@ -461,7 +471,7 @@ scUse() {
       # obtain a mount point where target will be mounted
       local mount_point=$(getMountPoint $target)
       # mount the target
-      scMount $target $mount_point
+      scxMount $target $mount_point
       # chroot the mount point
       if [ $# -gt 1 ]; then
         # pass user commands to the environment
@@ -470,7 +480,7 @@ scUse() {
         setarch $TARGET_ARCH $BINDIR/chrooted $mount_point $CHROOTSHELL
       fi
       # umount the mount point
-      scUmount $target $mount_point
+      scxUmount $target $mount_point
       cleanupTargetList
       ;;
     null)
@@ -479,7 +489,7 @@ scUse() {
   esac
 }
 
-scStat() {
+scxStatus() {
   local target_list_file="$MNTDIR/.targets"
   if [ ! -f $target_list_file ]; then
     touch $target_list_file
@@ -488,7 +498,7 @@ scStat() {
   fi
 }
 
-scEnv() {
+scxEnv() {
   printf "%-20s: %s\n" "APPNAME" "$APPNAME"
   printf "%-20s: %s\n" "APPVERSION" "$APPVERSION"
   printf "%-20s: %s\n" "TMPDIR" "$TMPDIR"
@@ -522,49 +532,49 @@ main() {
     mkimage)
       checkUID
       shift 1
-      scMkImage $@
+      scxMkImage $@
       break
       ;;
     setup)
       checkUID
       shift
-      scSetup $@
+      scxSetup $@
       break
       ;;
     install)
       checkUID
       shift 1
-      scInstall $@
+      scxInstall $@
       break
       ;;
     use)
       [ $# -lt 2 ] && msgUsage
       checkUID
       shift 1
-      scUse $@
+      scxUse $@
       break
       ;;
     mount)
       [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
-      scMount $@
+      scxMount $@
       break
       ;;
     umount)
       [ $# -ne 2 ] && msgUsage
       checkUID
       shift 1
-      scUmount $@
+      scxUmount $@
       break
       ;;
     stat)
       checkUID
-      scStat
+      scxStat
       break
       ;;
     env)
-      scEnv
+      scxEnv
       break
       ;;
     version)
@@ -617,6 +627,12 @@ for arg in $@; do
     --target-type=*)
       TARGET_TYPE="$(echo $arg | sed 's|--target-type=||')"
       ;;
+    --iso-file=*)
+      FORCE_ISO_FILE="$(echo $arg | sed 's|--iso-file=||')"
+      ;;
+    --iso-version=*)
+      FORCE_ISO_VERSION="$(echo $arg | sed 's|--iso-version=||')"
+      ;;
   esac
 done
 
@@ -635,6 +651,14 @@ if [ $USERCONF -eq 1 ]; then
 else
     # create dirs if required
     mkdir -p $ISODIR $MNTDIR $IMGDIR
+fi
+
+# load forced config
+if [ "x$FORCE_ISO_FILE" != "x" ] && [ -r $FORCE_ISO_FILE ]; then
+    ISO_FILE=$FORCE_ISO_FILE
+fi
+if [ "x$FORCE_ISO_VERSION" != "x" ]; then
+    ISO_VERSION=$FORCE_ISO_VERSION
 fi
 
 # handle signals
