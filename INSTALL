@@ -5,20 +5,19 @@ INSTALL
   $ make
   $ sudo make install
 
-  or specify the installation directory:
+  By default it will be under /usr/local.
+  To change this behaviour specify the installation directory:
   $ sudo make install DESTDIR=/opt
 
 
 SUDOERS
 
   Add a line with your user or group in sudoers(8):
-  <user_or_group>  ALL=(ALL) NOPASSWD: /usr/share/safe-crux/scx
+  <user_or_group>  ALL=(ALL) NOPASSWD: /usr/local/share/safe-crux/scx
 
 
 PACKAGES
 
-  To create a CRUX package:
+  To create a CRUX package and install them just run:
   $ pkgmk
-
-  or better:
-  $ fakeroot pkgmk
+  $ sudo pkgadd safe-crux#VERSION-RELEASE.pkg.tar.xz
