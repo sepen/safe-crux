@@ -291,7 +291,7 @@ scxSetup() {
   case $target_type in
     null)
       # target still not exists, so we should create a new image file
-      IMAGE_SIZE="1024000" # 1G (kernel requires space)
+      IMAGE_SIZE="1024000" # 1GB (kernel requires space)
       scxMkImage $target
       scxMount $target $mount_point && rm -rf $mount_point/lost+found
       ;;
@@ -602,7 +602,7 @@ export PATH=$PATH:/sbin:/usr/sbin
 
 # static variables
 readonly APPNAME="$(basename $0)"
-readonly APPVERSION="3.1"
+readonly APPVERSION="3.2"
 
 # variables that can be overriden by the config file
 TMPDIR="$(mktemp -d)"
@@ -617,6 +617,9 @@ TARGET_ARCH="x86_64"
 TARGET_TYPE="file"
 USERCONF=0
 CHROOTSHELL="/bin/bash"
+
+# show usage info
+[ $# -eq 0 ] && msgUsage
 
 # read runtime variables
 for arg in $@; do
