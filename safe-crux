@@ -44,22 +44,28 @@ msgVersion() {
 
 msgUsage() {
   echo "Usage: $APPNAME command <options>"
-  echo "Where commands are:"
+  echo
+  echo "Available commands are:"
   echo "  help                     Show this help information"
   echo "  version                  Show version string"
-  echo "  stat                     Show current status of running environments"
+  echo "  status                   Show current status of running environments"
   echo "  mkimage <target>         Create an empty image"
   echo "  setup   <target>         Run setup to install/update a enviroment"
   echo "  install <target>         Install all packages in \$PACKAGE_DIR"
   echo "  use     [target] <cmd>   Use an environment (optionally: execute 'cmd')"
   echo "  mount   [target]         Mount an environment"
   echo "  umount  [target]         Umount an environment"
-  echo "  env                      Show environment variables for safe-crux"
-  echo "Where target can be one of this:"
-  echo "  path to a directory (i.e: /tmp/crux-testdir)"
-  echo "  path to a image file (i.e: /home/foo/crux-testfile.ext3)"
-  echo "  path to a block device (i.e: /dev/sdb1)"
-  echo "  name of image file under \$IMGDIR (i.e: crux-testfile2)"
+  echo "  env                      Show environment variables"
+  echo
+  echo "Examples of target can be one of this:"
+  echo "  path to a image file              (example: /home/user/crux-test.img)"
+  echo "  path to a block device            (example: /dev/sdb1)"
+  echo "  path to a directory               (example: /home/user/crux-test)"
+  echo "  name of image file under \$IMGDIR  (example: crux-test.img)"
+  echo
+  echo "Optionally you can override any environment variable like this:"
+  echo "  FORCE_IMAGE_FSTYPE='ext4' $APPNAME command <options>"
+  echo
   delTmpDir
   exit 0
 }
@@ -89,17 +95,14 @@ getTarget() {
 
 getTargetType() {
   local target=$1
-  #TODO: fix how target / TARGET_TYPE works
-  if [ ! -z $TARGET_TYPE ]; then
-    echo $TARGET_TYPE
+  if [ -f "$target" ]; then
+    echo "file"
   elif [ -b "$target" ]; then
     echo "block"
   elif [ -d "$target" ]; then
     echo "dir"
-  elif [ -f "$target" ]; then
-    echo "file"
   else
-    echo "null"
+    echo $TARGET_TYPE
   fi
 }
 
@@ -118,8 +121,6 @@ createUserConf() {
     ISODIR="$USERDIR/iso"
     MNTDIR="$USERDIR/mnt"
     IMGDIR="$USERDIR/img"
-    # create dirs
-    mkdir -p $ISODIR $MNTDIR $IMGDIR
     # create user config file
     cat > $USERDIR/$APPNAME.conf << __EOF__
 #
@@ -128,9 +129,9 @@ createUserConf() {
 
 # directory where iso files are stored
 ISODIR=$ISODIR
-# directory where safe-crux's targets are mounted
+# directory where targets are mounted
 MNTDIR=$MNTDIR
-# directory containing safe-crux's images
+# directory containing images
 IMGDIR=$IMGDIR
 
 # End of file
@@ -141,16 +142,13 @@ __EOF__
 
 downloadISO() {
   local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local iso_version="3.1"
-  [ ! -z $ISO_VERSION ] && iso_version="$ISO_VERSION"
-  local iso_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.iso"
-  local iso_md5_file="ftp://ftp.morpheus.net/pub/linux/crux/crux-$iso_version/iso/crux-$iso_version.md5"
-  [ ! -z $ISO_FILE ] && iso_file="$ISO_FILE"
-  [ ! -z $ISO_MD5_FILE ] && iso_md5_file="$ISO_MD5_FILE"
-  echo "iso_file: $iso_file"
+  local iso_version="$ISO_VERSION"
+  local iso_file="$ISO_FILE"
+  local iso_md5_file="$ISO_MD5_FILE"
   local iso_local_file="$ISODIR/${iso_file##*/}"
   local iso_local_md5_file="$ISODIR/${iso_md5_file##*/}"
-  echo "iso_file: $iso_local_file"
+  echo "iso_file: $iso_file"
+  echo "iso_local_file: $iso_local_file"
   [ ! "$(type -p wget)" ] && msgError "command 'wget' not found"
   [ ! -f $iso_file ] && wget $wget_options $iso_file
   [ ! -f $iso_md5_file ] && wget $wget_options $iso_md5_file
@@ -169,7 +167,7 @@ makeImageFile() {
     [ "$answer" == "y" ] && rm -vf $imgfile
   fi
   echo "+ Getting some space for the filesystem image. Please wait ..."
-  local imgsize="512000" # 500M (500 x 1024)
+  local imgsize="1024000" # 1GB (1000 x 1024)
   [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
   dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
 }
@@ -289,13 +287,12 @@ scxSetup() {
   local mount_point=$2
   [ -z $mount_point ] && mount_point=$(getMountPoint $target)
   case $target_type in
-    null)
-      # target still not exists, so we should create a new image file
-      IMAGE_SIZE="1024000" # 1GB (kernel requires space)
+    file)
       scxMkImage $target
-      scxMount $target $mount_point && rm -rf $mount_point/lost+found
+      scxMount $target $mount_point
+      rm -rf $mount_point/lost+found
       ;;
-    block|file)
+    block)
       scxMount $target $mount_point
       ;;
     dir)
@@ -358,7 +355,7 @@ scxSetup() {
   umount $ISODIR/mnt
   # umount the target if a directory was not used
   case $target_type in
-    block|null|file)
+    file|block)
       scxUmount $target $mount_point
       ;;
   esac
@@ -501,25 +498,25 @@ scxStatus() {
 scxEnv() {
   printf "%-20s: %s\n" "APPNAME" "$APPNAME"
   printf "%-20s: %s\n" "APPVERSION" "$APPVERSION"
+  printf "%-20s: %s\n" "APPDIR" "$APPDIR"
+  printf "%-20s: %s\n" "BINDIR" "$BINDIR"
+  printf "%-20s: %s\n" "ETCDIR" "$ETCDIR"
   printf "%-20s: %s\n" "TMPDIR" "$TMPDIR"
-  printf "%-20s: %s\n" "BASEDIR" "$BASEDIR"
   printf "%-20s: %s\n" "ISODIR" "$ISODIR"
   printf "%-20s: %s\n" "MNTDIR" "$MNTDIR"
   printf "%-20s: %s\n" "IMGDIR" "$IMGDIR"
-  printf "%-20s: %s\n" "BINDIR" "$BINDIR"
-  printf "%-20s: %s\n" "ETCDIR" "$ETCDIR"
-  printf "%-20s: %s\n" "USERDIR" "$USERDIR"
-  printf "%-20s: %s\n" "USERCONF" "$USERCONF"
   printf "%-20s: %s\n" "TARGET_ARCH" "$TARGET_ARCH"
   printf "%-20s: %s\n" "TARGET_TYPE" "$TARGET_TYPE"
-  printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
+  printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
+  printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
   printf "%-20s: %s\n" "ISO_VERSION" "$ISO_VERSION"
   printf "%-20s: %s\n" "ISO_FILE" "$ISO_FILE"
   printf "%-20s: %s\n" "ISO_MD5_FILE" "$ISO_MD5_FILE"
-  [ ! -z $IMAGE_SIZE ] && printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
-  [ ! -z $IMAGE_TYPE ] && printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
+  printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
   [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
   [ ! -z $PACKAGE_DIR ] && printf "%-20s: %s\n" "PACKAGE_DIR" "$PACKAGE_DIR"
+  printf "%-20s: %s\n" "USERDIR" "$USERDIR"
+  printf "%-20s: %s\n" "USERCONF" "$USERCONF"
 }
 
 #
@@ -568,9 +565,9 @@ main() {
       scxUmount $@
       break
       ;;
-    stat)
+    status)
       checkUID
-      scxStat
+      scxStatus
       break
       ;;
     env)
@@ -603,43 +600,31 @@ export PATH=$PATH:/sbin:/usr/sbin
 # static variables
 readonly APPNAME="$(basename $0)"
 readonly APPVERSION="3.2"
+readonly APPDIR="$(cd $(dirname $0); pwd -P)" # pwd -P: avoid all symlinks
+readonly BINDIR="$APPDIR/bin"
+readonly ETCDIR="$APPDIR/etc"
+readonly TMPDIR="$(mktemp -d)"
 
-# variables that can be overriden by the config file
-TMPDIR="$(mktemp -d)"
-BASEDIR="$(cd $(dirname $0); pwd -P)" # pwd -P: avoid all symlinks
-ISODIR="$BASEDIR/.scx/iso"
-MNTDIR="$BASEDIR/.scx/mnt"
-IMGDIR="$BASEDIR/.scx/img"
-BINDIR="$BASEDIR/bin"
-ETCDIR="$BASEDIR/etc"
-USERDIR="$HOME/.$APPNAME"
+# variables that can be overriden by config files or environment values
+ISODIR="$APPDIR/.scx/iso"
+MNTDIR="$APPDIR/.scx/mnt"
+IMGDIR="$APPDIR/.scx/img"
+USERDIR="$HOME/.scx"
+USERCONF=0
 TARGET_ARCH="x86_64"
 TARGET_TYPE="file"
-USERCONF=0
+IMAGE_SIZE=1024000
+IMAGE_FSTYPE="ext2"
+ISO_VERSION="$APPVERSION"
+ISO_MIRROR_URL="ftp://ftp.morpheus.net/pub/linux/crux/crux-$ISO_VERSION/iso"
+ISO_FILE="$ISO_MIRROR_URL/crux-$ISO_VERSION.iso"
+ISO_MD5_FILE="$ISO_MIRROR_URL/crux-$ISO_VERSION.md5"
 CHROOTSHELL="/bin/bash"
 
 # show usage info
 [ $# -eq 0 ] && msgUsage
 
-# read runtime variables
-for arg in $@; do
-  case $arg in
-    --target-arch=*)
-      TARGET_ARCH="$(echo $arg | sed 's|--target-arch=||')"
-      ;;
-    --target-type=*)
-      TARGET_TYPE="$(echo $arg | sed 's|--target-type=||')"
-      ;;
-    --iso-file=*)
-      FORCE_ISO_FILE="$(echo $arg | sed 's|--iso-file=||')"
-      ;;
-    --iso-version=*)
-      FORCE_ISO_VERSION="$(echo $arg | sed 's|--iso-version=||')"
-      ;;
-  esac
-done
-
-# load config vars
+# load system config
 [ -f $ETCDIR/$APPNAME.conf ] && . $ETCDIR/$APPNAME.conf
 
 # load config vars overwriten by user
@@ -651,18 +636,28 @@ if [ $USERCONF -eq 1 ]; then
       [ ! -d $USERDIR ] && createUserConf
       [ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
     fi
-else
-    # create dirs if required
-    mkdir -p $ISODIR $MNTDIR $IMGDIR
 fi
 
-# load forced config
-if [ "x$FORCE_ISO_FILE" != "x" ] && [ -r $FORCE_ISO_FILE ]; then
-    ISO_FILE=$FORCE_ISO_FILE
-fi
-if [ "x$FORCE_ISO_VERSION" != "x" ]; then
-    ISO_VERSION=$FORCE_ISO_VERSION
-fi
+# override config with environment values
+#if [ 0 = 1 ]; then
+[  ! -z $FORCE_ISODIR ] && ISODIR=$FORCE_ISODIR
+[  ! -z $FORCE_MNTDIR ] && MNTDIR=$FORCE_MNTDIR
+[  ! -z $FORCE_IMGDIR ] && IMGDIR=$FORCE_IMGDIR
+[  ! -z $FORCE_TARGET_ARCH ] && TARGET_ARCH=$FORCE_TARGET_ARCH
+[  ! -z $FORCE_TARGET_TYPE ] && TARGET_TYPE=$FORCE_TARGET_TYPE
+[  ! -z $FORCE_IMAGE_SIZE ] && IMAGE_SIZE=$FORCE_IMAGE_SIZE
+[  ! -z $FORCE_IMAGE_FSTYPE ] && IMAGE_FSTYPE=$FORCE_IMAGE_FSTYPE
+[  ! -z $FORCE_ISO_VERSION ] && ISO_VERSION=$FORCE_ISO_VERSION
+[  ! -z $FORCE_ISO_MIRROR_URL ] && ISO_MIRROR_URL=$FORCE_ISO_MIRROR_URL
+[  ! -z $FORCE_ISO_FILE ] && ISO_FILE=$FORCE_ISO_FILE
+[  ! -z $FORCE_ISO_MD5_FILE ] && ISO_MD5_FILE=$FORCE_ISO_MD5_FILE
+[  ! -z $FORCE_CHROOTSHELL ] && CHROOTSHELL=$FORCE_CHROOTSHELL
+[  ! -z $FORCE_USERDIR ] && USERDIR=$FORCE_USERDIR
+[  ! -z $FORCE_USERCONF ] && USERCONF=$FORCE_USERCONF
+#fi
+
+# create some dirs if required
+mkdir -p $ISODIR $MNTDIR $IMGDIR
 
 # handle signals
 trap "msgError interrupted" SIGINT SIGTERM
