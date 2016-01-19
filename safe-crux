@@ -1,6 +1,6 @@
-#!/bin/bash
-#
-# Copyright (c) 2007 - 2015
+#!/usr/bin/env bash
+
+# Copyright (c) 2007 - 2016
 #   Jose V Beneyto, <sepen@crux.nu>
 #   Victor Martinez, <pitillo@ono.com>
 #
@@ -22,650 +22,64 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-#
-# Functions
-#
+# readonly variables
+readonly export SCX_APPNAME="safe-crux"
+readonly export SCX_APPVERSION="3.2"
+readonly export SCX_APPDIR="$(cd $(dirname $0); pwd -P)"
+readonly export SCX_SCXDIR="$SCX_APPDIR/scx.d"
+readonly export SCX_BINDIR="$SCX_APPDIR/bin"
+readonly export SCX_LIBDIR="$SCX_APPDIR/lib"
 
-delTmpDir() {
-  rm -rf $TMPDIR
+# system-wide config file
+export SCX_CONFIG="$SCX_APPDIR/safe-crux.conf"
+
+# variables which can be override by config file
+setconf() {
+    [ -f "$SCX_CONFIG" ] && source $SCX_CONFIG
+    export SCX_VARDIR="$SCX_APPDIR/var"
+    export SCX_ISODIR="$SCX_VARDIR/iso"
+    export SCX_MNTDIR="$SCX_VARDIR/mnt"
+    export SCX_TARGETDIR="$SCX_VARDIR/target"
+    export SCX_RUNFILE="$SCX_VARDIR/run/status"
+    export SCX_CHROOTSHELL="/bin/bash"
 }
 
-msgError() {
-  echo "Error, $@" 2>&1
-  delTmpDir
-  exit 1
-}
-
-msgVersion() {
-  echo "$APPNAME $APPVERSION by Jose V Beneyto and Victor Martinez"
-  delTmpDir
-  exit 0
-}
-
-msgUsage() {
-  echo "Usage: $APPNAME command <options>"
-  echo
-  echo "Available commands are:"
-  echo "  help                     Show this help information"
-  echo "  version                  Show version string"
-  echo "  status                   Show current status of running environments"
-  echo "  mkimage <target>         Create an empty image"
-  echo "  setup   <target>         Run setup to install/update a enviroment"
-  echo "  install <target>         Install all packages in \$PACKAGE_DIR"
-  echo "  use     [target] <cmd>   Use an environment (optionally: execute 'cmd')"
-  echo "  mount   [target]         Mount an environment"
-  echo "  umount  [target]         Umount an environment"
-  echo "  env                      Show environment variables"
-  echo
-  echo "Examples of target can be one of this:"
-  echo "  path to a image file              (example: /home/user/crux-test.img)"
-  echo "  path to a block device            (example: /dev/sdb1)"
-  echo "  path to a directory               (example: /home/user/crux-test)"
-  echo "  name of image file under \$IMGDIR  (example: crux-test.img)"
-  echo
-  echo "Optionally you can override any environment variable like this:"
-  echo "  FORCE_IMAGE_FSTYPE='ext4' $APPNAME command <options>"
-  echo
-  delTmpDir
-  exit 0
-}
-
-checkMD5() {
-  local md5_file="$1"
-  cd $ISODIR && md5sum -c $1 >/dev/null 2>&1 || msgError "md5sum differs"
-}
-
-checkUID() {
-  [ $(id -u) -ne 0 ] && msgError "you must be root to use $APPNAME"
-}
-
-getTarget() {
-  local target=$1
-  # if is not a valid path
-  if [ ! -e $target ]; then
-    # is is not a file under $IMGDIR
-    if [ ! -f $IMGDIR/$target ]; then
-      msgError "can't find $target"
-    else
-      target="$IMGDIR/$target"
-    fi
-  fi
-  echo $target
-}
-
-getTargetType() {
-  local target=$1
-  if [ -f "$target" ]; then
-    echo "file"
-  elif [ -b "$target" ]; then
-    echo "block"
-  elif [ -d "$target" ]; then
-    echo "dir"
-  else
-    echo $TARGET_TYPE
-  fi
-}
-
-getMountPoint() {
-  local target=$1
-  # use name of target as name of mount point
-  echo "$MNTDIR/$(basename $target)"
-}
-
-#
-# Tasks
-#
-
-createUserConf() {
-    # redefine config variables
-    ISODIR="$USERDIR/iso"
-    MNTDIR="$USERDIR/mnt"
-    IMGDIR="$USERDIR/img"
-    # create user config file
-    cat > $USERDIR/$APPNAME.conf << __EOF__
-#
-# $USERDIR/$APPNAME.conf
-#
-
-# directory where iso files are stored
-ISODIR=$ISODIR
-# directory where targets are mounted
-MNTDIR=$MNTDIR
-# directory containing images
-IMGDIR=$IMGDIR
-
-# End of file
-__EOF__
-    # fix owner and permissions
-    chown -R $SUDO_USER:$(id -gn $SUDO_USER) $USERDIR
-}
-
-downloadISO() {
-  local wget_options="-c --passive-ftp --tries=3 --waitretry=3 --directory-prefix=$ISODIR"
-  local iso_version="$ISO_VERSION"
-  local iso_file="$ISO_FILE"
-  local iso_md5_file="$ISO_MD5_FILE"
-  local iso_local_file="$ISODIR/${iso_file##*/}"
-  local iso_local_md5_file="$ISODIR/${iso_md5_file##*/}"
-  echo "iso_file: $iso_file"
-  echo "iso_local_file: $iso_local_file"
-  [ ! "$(type -p wget)" ] && msgError "command 'wget' not found"
-  [ ! -f $iso_file ] && wget $wget_options $iso_file
-  [ ! -f $iso_md5_file ] && wget $wget_options $iso_md5_file
-  if [ "x$FORCE_ISO_FILE" == "x" ]; then
-    echo "+ Checking md5sum ..."
-    checkMD5 $iso_local_md5_file
-  fi
-}
-
-makeImageFile() {
-  echo "+ Checking for existing images ..."
-  local answer="n"
-  local imgfile=$1
-  if [ -f $imgfile ]; then
-    read -p "File '$imgfile' found, do you want to remove it [y|n] " answer
-    [ "$answer" == "y" ] && rm -vf $imgfile
-  fi
-  echo "+ Getting some space for the filesystem image. Please wait ..."
-  local imgsize="1024000" # 1GB (1000 x 1024)
-  [ ! -z $IMAGE_SIZE ] && imgsize=$IMAGE_SIZE
-  dd if=/dev/zero of=$imgfile bs=1k count=$imgsize
-}
-
-makeFileSystem() {
-  echo "+ Formating ..."
-  local target=$(getTarget $1)
-  local target_type=$(getTargetType $target)
-  # decide what to do
-  case $target_type in
-    file|block)
-      local fstype="ext2"
-      [ ! -z $IMAGE_FSTYPE ] && fstype=$IMAGE_FSTYPE
-      mkfs -t $fstype -q $target
-      [ $? -ne 0 ] && exit 0
-      ;;
-    *)
-      msgError "can't format $target"
-      ;;
-  esac
-}
-
-updateTargetList() {
-  # format for target list files
-  # id|date|target
-  local target_list_file="$MNTDIR/.targets"
-  local date="$(date +'%F %T')"
-  # append new target
-  echo "$$|$date|$1" >> $target_list_file
-  # delete old target files not being in use
-  mv $target_list_file{,.old}
-  for id in $(pgrep safe-crux); do
-    grep ^$id $target_list_file.old
-  done > $target_list_file
-  rm -f $target_list_file.old
-}
-
-cleanupTargetList() {
-  local target_list_file="$MNTDIR/.targets"
-  mv $target_list_file{,.old}
-  grep -v ^$$ $target_list_file.old > $target_list_file
-  rm -f $target_list_file.old
-}
-
-#
-# Commands
-#
-
-scxMount() {
-  echo "+ Mounting target $1 ..."
-  local target=$(getTarget $1)
-  local mount_point=$2
-  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
-  local target_type=$(getTargetType $target)
-  # check if was previously mounted
-  if mountpoint -q $mount_point; then
-    echo "+ Target $1 was previously mounted ..."
-  else
-    # decide what to do
-    case $target_type in
-      file)
-        mkdir -p $mount_point
-        mount -o loop,rw $target $mount_point
-        ;;
-      block)
-        mkdir -p $mount_point
-        mount -o rw $target $mount_point
-        ;;
-    esac
-  fi
-}
-
-scxUmount() {
-  echo "+ Unmounting target $1 ..."
-  local target=$(getTarget $1)
-  local mount_point=$2
-  [ -z "$mount_point" ] && mount_point=$(getMountPoint $target)
-  # check if was previously mounted
-  if mountpoint -q $mount_point; then
-    # check if there is another session running
-    # so $mount_point/proc at least should be mounted too
-    if mountpoint -q $mount_point/proc; then
-      echo "+ Can't unmount target, there is another session running for $1"
-    else
-      umount $mount_point && rm -r $mount_point
-    fi
-  fi
-}
-
-scxMkImage() {
-  local target=$IMGDIR/crux-$ISO_VERSION
-  # check if target is passed as argument
-  if [ ! -z $1 ]; then
-    # check if no absolute path is given
-    if [ "$(basename $1)" == "$1" ]; then
-      target=$IMGDIR/$1
-    else
-      target=$1
-    fi
-    makeImageFile $target
-    makeFileSystem $target
-  fi
-}
-
-scxSetup() {
-  local target=$IMGDIR/crux-$ISO_VERSION
-  # check if target is passed as argument
-  if [ ! -z $1 ]; then
-    # check if no absolute path is given
-    if [ "$(basename $1)" == "$1" ]; then
-      target=$IMGDIR/$1
-    else
-      target=$1
-    fi
-  fi
-  local target_type=$(getTargetType $target)
-  local mount_point=$2
-  [ -z $mount_point ] && mount_point=$(getMountPoint $target)
-  case $target_type in
-    file)
-      scxMkImage $target
-      scxMount $target $mount_point
-      rm -rf $mount_point/lost+found
-      ;;
-    block)
-      scxMount $target $mount_point
-      ;;
-    dir)
-      mount_point=$target
-      ;;
-  esac
-  echo "+ Running the install ..."
-  local iso_file="$ISODIR/${ISO_FILE##*/}"
-  if [ "x$FORCE_ISO_FILE" == "x" ]; then
-    downloadISO
-  else
-    iso_file="$FORCE_ISO_FILE"
-  fi
-  echo "+ Mounting the iso image ..."
-  mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
-  mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
-  echo "+ Preparing the setup ..."
-  # prepare setup stuff (setup-helper, setup.dependencies, setup, crux_dir)
-  cd $TMPDIR
-  if [ -f $ISODIR/mnt/crux.squashfs ]; then # CRUX VERSION < 2.8
-    $ISODIR/mnt/tools/unsquashfs $ISODIR/mnt/crux.squashfs
-    ln -s squashfs-root/usr/bin/setup-helper .
-    ln -s squashfs-root/usr/bin/setup .
-  else # CRUX VERSION >= 2.8
-    mkdir rootfs
-    tar -C rootfs -xf $ISODIR/mnt/rootfs.tar.xz
-    ln -s rootfs/usr/bin/setup-helper .
-    ln -s rootfs/usr/bin/setup .
-  fi
-  # using pkgutils from the iso
-  mkdir pkgutils
-  tar -C pkgutils -xf $ISODIR/mnt/tools/pkgutils*
-  ln -s pkgutils/usr/bin/pkgadd .
-  ln -s pkgutils/usr/bin/pkginfo .
-  ln -s pkgutils/usr/bin/pkgrm .
-  # patching setup scripts
-  sed -i setup \
-    -e "s|pkgadd -r|$TMPDIR/pkgadd -r|g" \
-    -e "s|pkginfo -r|$TMPDIR/pkginfo -r|g" \
-    -e "s|/usr/bin|$TMPDIR|g" \
-    -e "s|crux_dir=.*|crux_dir=$ISODIR/mnt/crux|g" \
-    -e "s|select_root$|ROOT=$mount_point|g"
-  sed -i setup-helper \
-    -e "s|pkginfo -r|$TMPDIR/pkginfo -r|g" \
-    -e "s|PKGADD=.*|PKGADD=$TMPDIR/pkgadd|g" \
-    -e "s|PKGRM=.*|PKGRM=$TMPDIR/pkgrm|g"
-  # avoid copy the kernel
-  local kernel_version=$(find $ISODIR/mnt/crux/kernel -type f -name '*.config' -exec basename {} .config \; | sed 's|linux-||')
-  mkdir $mount_point/usr/src/linux-$kernel_version
-  # call the setup
-  $TMPDIR/setup
-  if [ $? -eq 0 ]; then
-    #echo "+ Installing extra stuff ..."
-    #install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
-    #install -D -m 0644 /etc/hosts $mount_point/etc/hosts
-    install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
-  fi
-  # umount the iso
-  echo "+ Unmounting the iso image ..."
-  umount $ISODIR/mnt
-  # umount the target if a directory was not used
-  case $target_type in
-    file|block)
-      scxUmount $target $mount_point
-      ;;
-  esac
-}
-
-scxInstall() {
-  local use_iso=1
-  local target=$IMGDIR/crux-$ISO_VERSION
-  # check if target is passed as argument
-  if [ ! -z $1 ]; then
-    # check if no absolute path is given
-    if [ "$(basename $1)" == "$1" ]; then
-      target=$IMGDIR/$1
-    else
-      target=$1
-    fi
-  fi
-  local target_type=$(getTargetType $target)
-  local mount_point=$2
-  [ -z $mount_point ] && mount_point=$(getMountPoint $target)
-  case $target_type in
-    block|null|file)
-      if [ $target_type != "block" ]; then
-        # target still not exists, so we should create a new image file
-        makeImageFile $target
-      fi
-      makeFileSystem $target
-      scxMount $target $mount_point && rm -r $mount_point/lost+found
-      ;;
-    dir)
-      # we will install in a directory
-      if [ ! -d $target ]; then
-        # target still not exists, so we should create a directory
-        mkdir -p $target
-      fi
-      mount_point=$target
-      ;;
-  esac
-  echo "+ Running the install ..."
-  local pkgdir
-  [ ! -z $PACKAGE_DIR ] && pkgdir=$PACKAGE_DIR
-  local pkgadd
-  [ ! -z $PKGADD_BIN ] && pkgadd=$PKGADD_BIN
-  # if both pkgdir and pkgadd are well defined we don't need to use the iso for them
-  if [ ! -z $pkgdir ] && [ ! -z $pkgadd ]; then
-    use_iso=0
-  else
-    use_iso=1
-    # now we must obtain pkgdir and pkgadd from the iso
-    local iso_file="$ISODIR/${ISO_FILE##*/}"
-    if [ "x$FORCE_ISO_FILE" == "x" ]; then
-        downloadISO
-    else
-        iso_file="$FORCE_ISO_FILE"
-    fi
-    echo "+ Mounting the iso image ..."
-    mkdir -p $ISODIR/mnt 2>/dev/null || msgError "can't create dir '$ISODIR/mnt'"
-    mount -o loop,ro -t iso9660 $iso_file $ISODIR/mnt
-    local pkgdir="$ISODIR/mnt/crux/core" # crux-2.2 or greater
-    [ ! -d $pkgdir ] && pkgdir="$ISODIR/mnt/crux/base" # crux-2.1 or lower
-    local pkgadd=$ISODIR/usr/bin/pkgadd # crux-2.3 or lower (without squasfs)
-    if [ ! -f $pkgadd ]; then
-      local pkgutils=$(find $pkgdir -type f -name 'pkgutils#*' -exec basename {} \;)
-      case $pkgutils in
-        *.xz) pkgutils=$(find $ISODIR/mnt/tools -type f -name 'pkgutils#*') ;;
-      esac
-      tar -C $TMPDIR -xzf $pkgutils usr/bin/pkgadd
-      pkgadd=$TMPDIR/usr/bin/pkgadd
-      if [ ! -f $pkgadd ]; then
-        msgError "can't find pkgadd binary in '$pkgadd'"
-      fi
-    fi
-  fi
-  # call the fakeinstall
-  $BINDIR/fakeinstall $pkgdir $mount_point --with-pkgadd=$pkgadd
-  if [ $? -eq 0 ]; then
-    echo "+ Installing extra stuff ..."
-    install -D -m 0644 /etc/resolv.conf $mount_point/etc/resolv.conf
-    install -D -m 0644 /etc/hosts $mount_point/etc/hosts
-    if [ $use_iso -eq 1 ]; then
-      install -D -m 0644 $ISODIR/mnt/crux/handbook.txt $mount_point/root/handbook.txt
-    fi
-  fi
-  # umount the iso if it was used
-  if [ $use_iso -eq 1 ]; then
-    echo "+ Unmounting the iso image ..."
-    umount $ISODIR/mnt
-  fi
-  # umount the target if a directory was not used
-  case $target_type in
-    block|null|file)
-      scxUmount $target $mount_point
-      ;;
-  esac
-}
-
-scxUse() {
-  local target=$(getTarget $1)
-  local target_type=$(getTargetType $target)
-  # decide what to do
-  case $target_type in
-    dir)
-      updateTargetList $target
-      # chroot the dir
-      setarch $TARGET_ARCH $BINDIR/chrooted $target $CHROOTSHELL
-      cleanupTargetList
-      ;;
-    file|block)
-      updateTargetList $target
-      # obtain a mount point where target will be mounted
-      local mount_point=$(getMountPoint $target)
-      # mount the target
-      scxMount $target $mount_point
-      # chroot the mount point
-      if [ $# -gt 1 ]; then
-        # pass user commands to the environment
-        shift; echo $@ | setarch $TARGET_ARCH $BINDIR/chrooted $mount_point $CHROOTSHELL
-      else
-        setarch $TARGET_ARCH $BINDIR/chrooted $mount_point $CHROOTSHELL
-      fi
-      # umount the mount point
-      scxUmount $target $mount_point
-      cleanupTargetList
-      ;;
-    null)
-      msgError "target '$1' not found"
-      ;;
-  esac
-}
-
-scxStatus() {
-  local target_list_file="$MNTDIR/.targets"
-  if [ ! -f $target_list_file ]; then
-    touch $target_list_file
-  else
-    cut -d'|' -f2- $target_list_file | sed 's/|/ - /g'
-  fi
-}
-
-scxEnv() {
-  printf "%-20s: %s\n" "APPNAME" "$APPNAME"
-  printf "%-20s: %s\n" "APPVERSION" "$APPVERSION"
-  printf "%-20s: %s\n" "APPDIR" "$APPDIR"
-  printf "%-20s: %s\n" "BINDIR" "$BINDIR"
-  printf "%-20s: %s\n" "ETCDIR" "$ETCDIR"
-  printf "%-20s: %s\n" "TMPDIR" "$TMPDIR"
-  printf "%-20s: %s\n" "ISODIR" "$ISODIR"
-  printf "%-20s: %s\n" "MNTDIR" "$MNTDIR"
-  printf "%-20s: %s\n" "IMGDIR" "$IMGDIR"
-  printf "%-20s: %s\n" "TARGET_ARCH" "$TARGET_ARCH"
-  printf "%-20s: %s\n" "TARGET_TYPE" "$TARGET_TYPE"
-  printf "%-20s: %s\n" "IMAGE_SIZE" "$IMAGE_SIZE"
-  printf "%-20s: %s\n" "IMAGE_FSTYPE" "$IMAGE_FSTYPE"
-  printf "%-20s: %s\n" "ISO_VERSION" "$ISO_VERSION"
-  printf "%-20s: %s\n" "ISO_FILE" "$ISO_FILE"
-  printf "%-20s: %s\n" "ISO_MD5_FILE" "$ISO_MD5_FILE"
-  printf "%-20s: %s\n" "CHROOTSHELL" "$CHROOTSHELL"
-  [ ! -z $PKGADD_BIN ] && printf "%-20s: %s\n" "PKGADD_BIN" "$PKGADD_BIN"
-  [ ! -z $PACKAGE_DIR ] && printf "%-20s: %s\n" "PACKAGE_DIR" "$PACKAGE_DIR"
-  printf "%-20s: %s\n" "USERDIR" "$USERDIR"
-  printf "%-20s: %s\n" "USERCONF" "$USERCONF"
-}
-
-#
-# Main rutine
-#
-
+# main function
 main() {
-  while [ $1 ]; do
-  case $1 in
-    mkimage)
-      checkUID
-      shift 1
-      scxMkImage $@
-      break
-      ;;
-    setup)
-      checkUID
-      shift
-      scxSetup $@
-      break
-      ;;
-    install)
-      checkUID
-      shift 1
-      scxInstall $@
-      break
-      ;;
-    use)
-      [ $# -lt 2 ] && msgUsage
-      checkUID
-      shift 1
-      scxUse $@
-      break
-      ;;
-    mount)
-      [ $# -ne 2 ] && msgUsage
-      checkUID
-      shift 1
-      scxMount $@
-      break
-      ;;
-    umount)
-      [ $# -ne 2 ] && msgUsage
-      checkUID
-      shift 1
-      scxUmount $@
-      break
-      ;;
-    status)
-      checkUID
-      scxStatus
-      break
-      ;;
-    env)
-      scxEnv
-      break
-      ;;
-    version)
-      msgVersion
-      break
-      ;;
-    -*)
-      shift
-      ;;
-    *)
-      msgUsage
-      break
-      ;;
-  esac
-  done
+    local cmd="$1"
+    shift
+    if [ -r "$SCX_LIBDIR"/"$cmd" ]; then
+        source "$SCX_LIBDIR"/"$cmd"
+        scx${cmd^} $@
+    else
+        scxHelp $@
+    fi
 }
 
-#
-# safe-crux init
-#
+# load config file
+setconf
 
-# environment variables
-export LANG=C
-export PATH=$PATH:/sbin:/usr/sbin
+# load main library file
+source "$SCX_LIBDIR"/scx
 
-# static variables
-readonly APPNAME="$(basename $0)"
-readonly APPVERSION="3.2"
-readonly APPDIR="$(cd $(dirname $0); pwd -P)" # pwd -P: avoid all symlinks
-readonly BINDIR="$APPDIR/bin"
-readonly ETCDIR="$APPDIR/etc"
-readonly TMPDIR="$(mktemp -d)"
+# parse input
+while getopts :hVec: opt; do
+    case "$opt" in
+        h) main "help" ;;
+        V) main "version" ;;
+        e) main "env" ;;
+        c) [ -f "$OPTARG" ] && SCX_CONFIG="$OPTARG" ;;
+    esac
+    shift $((OPTIND-1))
+done
 
-# variables that can be overriden by config files or environment values
-ISODIR="$APPDIR/.scx/iso"
-MNTDIR="$APPDIR/.scx/mnt"
-IMGDIR="$APPDIR/.scx/img"
-USERDIR="$HOME/.scx"
-USERCONF=0
-TARGET_ARCH="x86_64"
-TARGET_TYPE="file"
-IMAGE_SIZE=1024000
-IMAGE_FSTYPE="ext2"
-ISO_VERSION="$APPVERSION"
-ISO_MIRROR_URL="ftp://ftp.morpheus.net/pub/linux/crux/crux-$ISO_VERSION/iso"
-ISO_FILE="$ISO_MIRROR_URL/crux-$ISO_VERSION.iso"
-ISO_MD5_FILE="$ISO_MIRROR_URL/crux-$ISO_VERSION.md5"
-CHROOTSHELL="/bin/bash"
+# check input
+[ $# -eq 0 ] && scxHelp
 
-# show usage info
-[ $# -eq 0 ] && msgUsage
+# load config file again to override settings
+setconf
 
-# load system config
-[ -f $ETCDIR/$APPNAME.conf ] && . $ETCDIR/$APPNAME.conf
-
-# load config vars overwriten by user
-if [ $USERCONF -eq 1 ]; then
-    # if SUDO_USER environment variable is not empty
-    if [ "x$SUDO_USER" != "x" ]; then
-      HOMEDIR="$(getent passwd $SUDO_USER | cut -d':' -f6)"
-      USERDIR="$HOMEDIR/.$APPNAME"
-      [ ! -d $USERDIR ] && createUserConf
-      [ -f $USERDIR/$APPNAME.conf ] && . $USERDIR/$APPNAME.conf
-    fi
-fi
-
-# override config with environment values
-#if [ 0 = 1 ]; then
-[  ! -z $FORCE_ISODIR ] && ISODIR=$FORCE_ISODIR
-[  ! -z $FORCE_MNTDIR ] && MNTDIR=$FORCE_MNTDIR
-[  ! -z $FORCE_IMGDIR ] && IMGDIR=$FORCE_IMGDIR
-[  ! -z $FORCE_TARGET_ARCH ] && TARGET_ARCH=$FORCE_TARGET_ARCH
-[  ! -z $FORCE_TARGET_TYPE ] && TARGET_TYPE=$FORCE_TARGET_TYPE
-[  ! -z $FORCE_IMAGE_SIZE ] && IMAGE_SIZE=$FORCE_IMAGE_SIZE
-[  ! -z $FORCE_IMAGE_FSTYPE ] && IMAGE_FSTYPE=$FORCE_IMAGE_FSTYPE
-[  ! -z $FORCE_ISO_VERSION ] && ISO_VERSION=$FORCE_ISO_VERSION
-[  ! -z $FORCE_ISO_MIRROR_URL ] && ISO_MIRROR_URL=$FORCE_ISO_MIRROR_URL
-[  ! -z $FORCE_ISO_FILE ] && ISO_FILE=$FORCE_ISO_FILE
-[  ! -z $FORCE_ISO_MD5_FILE ] && ISO_MD5_FILE=$FORCE_ISO_MD5_FILE
-[  ! -z $FORCE_CHROOTSHELL ] && CHROOTSHELL=$FORCE_CHROOTSHELL
-[  ! -z $FORCE_USERDIR ] && USERDIR=$FORCE_USERDIR
-[  ! -z $FORCE_USERCONF ] && USERCONF=$FORCE_USERCONF
-#fi
-
-# create some dirs if required
-mkdir -p $ISODIR $MNTDIR $IMGDIR
-
-# handle signals
-trap "msgError interrupted" SIGINT SIGTERM
-
-# call the main rutine
+# execute main function
 main $@
-
-# remove tmp stuff
-delTmpDir
 
 # End of file

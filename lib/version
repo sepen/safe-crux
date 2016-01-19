@@ -1,0 +1,11 @@
+scxVersionHelp() {
+    cat << __EOF__
+Usage: $SCX_APPNAME version
+__EOF__
+    exit 0
+}
+
+scxVersion() {
+    echo "$SCX_APPNAME $SCX_APPVERSION"
+    exit 0
+}

@@ -1,0 +1,76 @@
+msgError() {
+    echo "ERROR: $@" 2>&1
+    exit 1
+}
+
+msgUsage() {
+    cat << __EOF__
+Usage: $SCX_APPNAME [option(s)] COMMAND [argument(s)]
+
+Options:
+
+  -c FILE  Location of config file
+  -h       Print usage and quit
+  -V       Print version information and quit
+  -e       Print environment variables and quit
+
+Commands:
+
+  setup    Run setup to install or update an enviroment
+  use      Use existing environment
+  status   Print status of running environments
+  help     Print usage information and exit
+  version  Print version information and exit
+  env      Print environment variables
+
+Run '$SCX_APPNAME COMMAND -h' or '$SCX_APPNAME help COMMAND' for info on a command
+__EOF__
+    exit 0
+}
+
+getTarget() {
+    local target="$1"
+    # if is not a valid path
+    if [ ! -e "$target" ]; then
+        # is is not a file under $SCX_TARGETDIR
+        if [ ! -f "$SCX_TARGETDIR"/"$target" ]; then
+            msgError "can't find $target"
+        else
+            target="$SCX_TARGETDIR/$target"
+        fi
+    fi
+    echo "$target"
+}
+
+getTargetType() {
+    local target="$1"
+    if [ -f "$target" ]; then
+        echo "file"
+    elif [ -b "$target" ]; then
+        echo "block"
+    elif [ -d "$target" ]; then
+        echo "dir"
+    else
+        echo "$target"
+    fi
+}
+
+getMountDir() {
+    local target="$1"
+    if [ -d "$target" ]; then
+        echo "$target"
+    else
+        # use name of target as name of mount point
+        echo "$SCX_MNTDIR/$(basename $target).target"
+    fi
+}
+
+scxHelp() {
+    local cmd="$1"
+    if [ -f "$SCX_LIBDIR/$cmd" ]; then
+        source "$SCX_LIBDIR"/"$cmd"
+        scx${cmd^}Help
+    else
+        msgUsage
+    fi
+}

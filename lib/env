@@ -1,0 +1,11 @@
+scxEnvHelp() {
+    cat << __EOF__
+Usage: $SCX_APPNAME env
+__EOF__
+    exit 0
+}
+
+scxEnv() {
+    env | grep ^SCX_
+    exit 0
+}

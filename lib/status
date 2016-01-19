@@ -1,0 +1,11 @@
+scxStatusHelp() {
+    cat << __EOF__
+Usage: $SCX_APPNAME status
+__EOF__
+    exit 0
+}
+
+scxStatus() {
+    [ -f "$SCX_RUNFILE" ] && cat $SCX_RUNFILE
+    exit 0
+}
