@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASEDIR=/usr/local/share/safe-crux
+BASEDIR=/opt/scx
 
 [ -f "$BASEDIR/safe-crux" ] || exit 1
 

@@ -1,9 +1,8 @@
 DESTDIR = 
 
-PREFIX  = /usr/local
+PREFIX  = /opt
 BINDIR  = $(PREFIX)/bin
-DATADIR = $(PREFIX)/share/safe-crux
-MANDIR  = $(PREFIX)/share/man
+DATADIR = $(PREFIX)/scx
 
 .PHONY: all install
 
@@ -13,7 +12,7 @@ clean:
 	rm -f safe-crux.wrapper
 
 safe-crux.wrapper: safe-crux.wrapper.in
-	sed "s|BASEDIR=.*|BASEDIR=$(DESTDIR)$(DATADIR)|" safe-crux.wrapper.in > safe-crux.wrapper
+	sed "s|BASEDIR=.*|BASEDIR=$(DATADIR)|" safe-crux.wrapper.in > safe-crux.wrapper
 
 install: safe-crux.wrapper
 	install -d $(DESTDIR)/$(BINDIR)
