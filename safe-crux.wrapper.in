@@ -2,6 +2,9 @@
 
 BASEDIR=/usr/local/share/safe-crux
 
-cd $BASEDIR && sudo ./safe-crux $@
+[ -f "$BASEDIR/safe-crux" ] || exit 1
+
+cd $BASEDIR
+./safe-crux $@
 
 # End of file
