@@ -1,0 +1,31 @@
+# CRUX 3.2 x86_64
+# https://crux.nu/Main/ReleaseNotes3-2
+# https://crux.nu/Main/Handbook3-2
+
+scx_arch="x86_64"
+scx_version="3.2"
+scx_uri="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-$scx_version.iso"
+scx_md5="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-$scx_version.md5"
+
+scx-setup() {
+    # get current directory
+    local pwd="$(pwd)"
+    # uncompress rootfs and pkgutils from the ISO
+    sudo tar -xf $SCX_ISODIR/mnt/rootfs.tar.xz || exit 0
+    sudo tar -xf $SCX_ISODIR/mnt/tools/pkgutils*
+    # patch setup and setup-helper scripts
+    sudo sed -i usr/bin/setup \
+        -e "s|/usr/bin|$pwd/usr/bin|g" \
+        -e "s|pkgadd -r|$pwd/usr/bin/pkgadd -r|g" \
+        -e "s|pkginfo -r|$pwd/usr/bin/pkginfo -r|g" \
+        -e "s|select_root$|ROOT=$SCX_MNTDIR|g"
+    sudo sed -i usr/bin/setup-helper \
+        -e "s|pkginfo -r|$pwd/usr/bin/pkginfo -r|g" \
+        -e "s|PKGADD=.*|PKGADD=$pwd/usr/bin/pkgadd|g" \
+        -e "s|PKGRM=.*|PKGRM=$pwd/usr/bin/pkgrm|g"
+    # avoid to install the kernel
+    local kver="$(find $SCX_ISODIR/mnt/crux/kernel -name '*.tar.xz' -exec basename {} .tar.xz \;)"
+    sudo mkdir -p $SCX_MNTDIR/usr/src/$kver
+    # run the setup script
+    sudo $pwd/usr/bin/setup "$SCX_ISODIR/mnt/crux"
+}
