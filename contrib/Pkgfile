@@ -1,0 +1,11 @@
+name=safe-crux
+version=$(./safe-crux version | cut -d' ' -f2)-dev
+release=1
+
+unpack_source() {
+  cp -r `pwd`/{Makefile,safe-crux*,bin,lib,scx.d,var} $SRC
+}
+
+build() {
+  make PREFIX=/usr DESTDIR=$PKG install
+}
