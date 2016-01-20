@@ -35,16 +35,16 @@ scxSetupPrepareIso() {
     local iso_md5="$2"
     # TODO: check if wget command is available or show error
     # download files
-    $cmd_wget $iso_uri
-    $cmd_wget $iso_md5
+    sudo $cmd_wget $iso_uri
+    sudo $cmd_wget $iso_md5
     # check md5sum
     local iso_md5file="${iso_md5##*/}"
     local cmd_md5sum="md5sum"
     # TODO: check if md5sum matches or show error
-    cd $SCX_ISODIR && md5sum -c "$iso_md5file"
+    cd $SCX_ISODIR && sudo md5sum -c "$iso_md5file"
     # mount iso
     # TODO: check if mkdir success or show error
-    mkdir -p $SCX_ISODIR/mnt
+    sudo mkdir -p $SCX_ISODIR/mnt
     local iso_file="${iso_uri##*/}"
     sudo mount -o loop,ro -t iso9660 $iso_file $SCX_ISODIR/mnt
 }
