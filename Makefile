@@ -22,3 +22,4 @@ install: safe-crux.wrapper
 	install -m 0755 safe-crux $(DESTDIR)/$(DATADIR)/safe-crux
 	install -m 0644 safe-crux.conf $(DESTDIR)/$(DATADIR)/safe-crux.conf
 	cp -r bin lib scx.d var $(DESTDIR)/$(DATADIR)
+	ln -s x86_64-32 $(DESTDIR)/$(DATADIR)/scx.d/x86_64
