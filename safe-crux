@@ -79,6 +79,9 @@ done
 # load config file again to override settings
 setconf
 
+# capture system signals
+trap "msgError interrupted" SIGINT SIGTERM
+
 # execute main function
 main $@
 
