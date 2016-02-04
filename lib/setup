@@ -24,29 +24,31 @@ scxSetupList() {
 
 scxSetupLoadVersion() {
     local scx_version="$1"
-    [ -f "$SCX_SCXDIR/$scx_version" ] || msgError "'$SCX_SCXDIR/$scx_version' not found"
+    [ -f "$SCX_SCXDIR/$scx_version" ] || msgError "$scx_version not found, type -l for a list of available versions"
     # TODO: check if required vars and functions are available or show error
     source "$SCX_SCXDIR/$scx_version"
 }
 
 scxSetupPrepareIso() {
     local cmd_wget="wget -nv -c -t 3 --waitretry=3 -P $SCX_ISODIR"
+    local cmd_md5sum="md5sum"
     local iso_uri="$1"
     local iso_md5="$2"
+    local iso_file="${iso_uri##*/}"
+    local iso_md5file="${iso_md5##*/}"
     # TODO: check if wget command is available or show error
     # download files
-    sudo $cmd_wget $iso_uri
-    sudo $cmd_wget $iso_md5
+    # TODO: refactor to downloadFile function
+    [ ! -f "$SCX_ISODIR/$iso_file" ] && sudo $cmd_wget $iso_uri
+    [ ! -f "$SCX_ISODIR/$iso_md5file" ] && sudo $cmd_wget $iso_md5
+    [ ! -f "$SCX_ISODIR/$iso_file" ] && exit 1
+    [ ! -f "$SCX_ISODIR/$iso_md5file" ] && exit 1
     # check md5sum
-    local iso_md5file="${iso_md5##*/}"
-    local cmd_md5sum="md5sum"
     # TODO: check if md5sum matches or show error
     cd $SCX_ISODIR && sudo md5sum -c "$iso_md5file"
     # mount iso
-    # TODO: check if mkdir success or show error
     sudo mkdir -p $SCX_ISODIR/mnt
-    local iso_file="${iso_uri##*/}"
-    sudo mount -o loop,ro -t iso9660 $iso_file $SCX_ISODIR/mnt
+    sudo mount -o loop,ro -t iso9660 $SCX_ISODIR/$iso_file $SCX_ISODIR/mnt
 }
 
 scxSetupLeaveIso() {
@@ -61,7 +63,6 @@ scxSetupPrepareTarget() {
     local image_fstype="ext2"
     case "$target_type" in
         dir)
-            [ "$target" = "" ] && target="$SCX_TARGETDIR/crux"
             [ ! -d "$target" ] && mkdir -p "$target"
             SCX_MNTDIR="$target"
             ;;
@@ -70,16 +71,15 @@ scxSetupPrepareTarget() {
             ;;
         file)
             # TODO: refactor as makeImageFile
-            [ "$target" = "" ] && target="$SCX_TARGETDIR/crux.img"
             if [ ! -f "$target" ]; then
-                echo "makeImageFile size:1GB"
+                echo "makeImageFile size: $image_size MB"
                 if [ -f $target ]; then
                     read -p "File $target found, do you want to remove it [y|n] " response
                     [ "$response" = "y" ] && rm -vf $target
                 fi
                 sudo dd if=/dev/zero of=$target bs=1M count=$image_size
             fi
-            sudo mkfs -t $image_fstype -q $target
+            sudo mkfs -t $image_fstype -q $target || exit 0
             sudo mount -o loop,rw "$target" "$SCX_MNTDIR"
             ;;
         *)
@@ -104,6 +104,8 @@ scxSetup() {
         esac
         shift $((OPTIND-1))
     done
+    # to continue we need at least 2 args
+    [ $# -lt 2 ] && scxSetupHelp
     setup_version="$1"
     setup_target="$2"
     scxSetupLoadVersion "$setup_version"
