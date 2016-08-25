@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 scxSetupHelp() {
     cat << __EOF__
 Usage: $SCX_APPNAME setup [option(s)] CRUX_VERSION TARGET

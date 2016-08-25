@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 scxVersionHelp() {
     cat << __EOF__
 Usage: $SCX_APPNAME version
