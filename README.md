@@ -1,5 +1,5 @@
 
-# README
+# SCX - Safe CRUX
 
 ## Usage
 
