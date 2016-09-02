@@ -34,7 +34,7 @@ readonly export SCX_LIBDIR="$SCX_APPDIR/lib"
 export SCX_CONFIG="$SCX_APPDIR/safe-crux.conf"
 
 # variables which can be override by config file
-setconf() {
+loadConf() {
     [ -f "$SCX_CONFIG" ] && source $SCX_CONFIG
     export SCX_VARDIR="$SCX_APPDIR/var"
     export SCX_ISODIR="$SCX_VARDIR/iso"
@@ -57,7 +57,7 @@ main() {
 }
 
 # load config file
-setconf
+loadConf
 
 # load main library file
 source "$SCX_LIBDIR"/scx
@@ -77,7 +77,7 @@ done
 [ $# -eq 0 ] && scxHelp
 
 # load config file again to override settings
-setconf
+loadConf
 
 # capture system signals
 trap "msgError interrupted" SIGINT SIGTERM
