@@ -5,7 +5,7 @@ msgError() {
     exit 1
 }
 
-msgUsage() {
+msgHelp() {
     cat << __EOF__
 Usage: $SCX_APPNAME [option(s)] COMMAND [argument(s)]
 
@@ -18,12 +18,12 @@ Options:
 
 Commands:
 
-  setup    Run setup to install or update an enviroment
-  use      Use existing environment
-  status   Print status of running environments
-  help     Print usage information and exit
-  version  Print version information and exit
   env      Print environment variables
+  setup    Run setup to install or update an enviroment
+  status   Print status of running environments
+  use      Use existing environment
+  version  Print version information
+  help     Print help and usage information
 
 Run '$SCX_APPNAME COMMAND -h' or '$SCX_APPNAME help COMMAND' for info on a command
 __EOF__
@@ -73,6 +73,6 @@ scxHelp() {
         source "$SCX_LIBDIR"/"$cmd"
         scx${cmd^}Help
     else
-        msgUsage
+        msgHelp
     fi
 }
