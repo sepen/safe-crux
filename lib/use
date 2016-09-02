@@ -45,7 +45,11 @@ scxUsePrepareTarget() {
 
 scxUseLeaveTarget() {
     sudo umount $SCX_MNTDIR >/dev/null 2>&1
-    sudo sed "/$$/d" -i $SCX_RUNFILE
+    sudo sed "/^$$ /d" -i $SCX_RUNFILE
+    # cleanup old entries
+    while read pid target; do
+      sudo test -d /proc/$pid || sudo sed "/^$pid /d" -i $SCX_RUNFILE
+    done < $SCX_RUNFILE
 }
 
 scxUse() {
