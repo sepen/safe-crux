@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+export SCX_SETUP_YES=0
+export SCX_SETUP_TYPE="file"
+
 scxSetupHelp() {
     cat << __EOF__
 Usage: $SCX_APPNAME setup [option(s)] CRUX_VERSION TARGET
@@ -7,6 +10,7 @@ Usage: $SCX_APPNAME setup [option(s)] CRUX_VERSION TARGET
 Options:
 
   -h       Print usage and quit
+  -y       Assume "yes" as answer to all prompts
   -l       Print available CRUX_VERSION setup files
   -t TYPE  Target type (options: dir, block and file)
 
@@ -59,11 +63,10 @@ scxSetupLeaveIso() {
 
 scxSetupPrepareTarget() {
     local target="$1"
-    local target_type="$2"
     # TODO: remove hardcoded vars from here
     local image_size="1024"
     local image_fstype="ext2"
-    case "$target_type" in
+    case "$SCX_SETUP_TYPE" in
         dir)
             [ ! -d "$target" ] && mkdir -p "$target"
             SCX_MNTDIR="$target"
@@ -75,13 +78,13 @@ scxSetupPrepareTarget() {
             # TODO: refactor as makeImageFile
             if [ ! -f "$target" ]; then
                 echo "makeImageFile size: $image_size MB"
-                if [ -f $target ]; then
+                if [ -f $target ] && [ $SCX_SETUP_YES -eq 0 ]; then
                     read -p "File $target found, do you want to remove it [y|n] " response
                     [ "$response" = "y" ] && rm -vf $target
                 fi
                 sudo dd if=/dev/zero of=$target bs=1M count=$image_size
             fi
-            sudo mkfs -t $image_fstype -q $target || exit 0
+            sudo mkfs -F -t $image_fstype -q $target || exit 0
             sudo mount -o loop,rw "$target" "$SCX_MNTDIR"
             ;;
         *)
@@ -96,15 +99,15 @@ scxSetupLeaveTarget() {
 
 scxSetup() {
     local tmpdir="$(mktemp -d)"
-    local setup_type= setup_version= setup_target=
+    local setup_version= setup_target=
     [ $# -eq 0 ] && scxSetupHelp
-    while getopts :hlt: opt; do
+    while getopts :hylt: opt; do
         case "$opt" in
             h) scxSetupHelp ;;
+            y) SCX_SETUP_YES=1 ;;
             l) scxSetupList ;;
-            t) setup_type="$OPTARG" ;;
+            t) SCX_SETUP_TYPE="$OPTARG"; shift $((OPTIND-1)) ;;
         esac
-        shift $((OPTIND-1))
     done
     # to continue we need at least 2 args
     [ $# -lt 2 ] && scxSetupHelp
@@ -112,9 +115,11 @@ scxSetup() {
     setup_target="$2"
     scxSetupLoadVersion "$setup_version"
     scxSetupPrepareIso "$scx_uri" "$scx_md5"
-    scxSetupPrepareTarget "$setup_target" "$setup_type"
-    read -p "You will setup $setup_version on $SCX_MNTDIR [y|n]? " response
-    [ "$response" != "y" ] && exit 0
+    scxSetupPrepareTarget "$setup_target"
+    if [ $SCX_SETUP_YES -eq 0 ]; then
+      read -p "You will setup $setup_version on $SCX_MNTDIR [y|n]? " response
+      [ "$response" != "y" ] && exit 0
+    fi
     cd $tmpdir
     scx-setup
     sudo rm -rf $tmpdir
