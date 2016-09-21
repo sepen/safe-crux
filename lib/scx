@@ -5,6 +5,10 @@ msgError() {
     exit 1
 }
 
+msgInfo() {
+    echo "> $@"
+} 
+
 msgHelp() {
     cat << __EOF__
 Usage: $SCX_APPNAME [option(s)] COMMAND [argument(s)]
