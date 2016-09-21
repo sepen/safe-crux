@@ -37,9 +37,13 @@ export SCX_CONFIG="$SCX_APPDIR/safe-crux.conf"
 loadConf() {
     [ -f "$SCX_CONFIG" ] && source $SCX_CONFIG
     export SCX_VARDIR="$SCX_APPDIR/var"
+    [ ! -d $SCX_VARDIR ] && mkdir -p $SCX_VARDIR
     export SCX_ISODIR="$SCX_VARDIR/iso"
+    [ ! -d $SCX_ISODIR ] && mkdir -p $SCX_ISODIR
     export SCX_MNTDIR="$SCX_VARDIR/mnt"
+    [ ! -d $SCX_MNTDIR ] && mkdir -p $SCX_MNTDIR
     export SCX_TARGETDIR="$SCX_VARDIR/target"
+    [ ! -d $SCX_TARGETDIR ] && mkdir -p $SCX_TARGETDIR
     export SCX_RUNFILE="$SCX_VARDIR/run/status"
     export SCX_CHROOTSHELL="/bin/bash"
 }
