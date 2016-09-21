@@ -39,7 +39,7 @@ loadConf() {
     export SCX_VARDIR="$SCX_APPDIR/var"
     [ -d "$SCX_VARDIR" ] || mkdir -p $SCX_VARDIR
     export SCX_ISODIR="$SCX_VARDIR/iso"
-    [ -d "$SCX_ISODIR" ] || mkdir -p $SCX_ISODIR
+    [ -d "$SCX_ISODIR" ] || mkdir -p $SCX_ISODIR
     export SCX_MNTDIR="$SCX_VARDIR/mnt"
     [ -d "$SCX_MNTDIR" ] || mkdir -p $SCX_MNTDIR
     export SCX_TARGETDIR="$SCX_VARDIR/target"

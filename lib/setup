@@ -121,6 +121,7 @@ scxSetup() {
       [ "$response" != "y" ] && exit 0
     fi
     cd $tmpdir
+    msgInfo "Running setup: $setup_target $setup_version"
     scx-setup
     sudo rm -rf $tmpdir
     scxSetupLeaveIso

@@ -21,7 +21,7 @@ scxUsePrepareTarget() {
     local target="$1"
     local target_type="$(getTargetType $target)"
     SCX_MNTDIR="$(getMountDir $target)"
-    mkdir -p $SCX_MNTDIR
+    sudo mkdir -p $SCX_MNTDIR
     case "$target_type" in
         dir)
             # do nothing
