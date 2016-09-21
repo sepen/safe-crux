@@ -4,8 +4,8 @@
 
 scx_arch="x86_64"
 scx_version="3.2-core"
-scx_uri="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-${scx_version/-core/}.iso"
-scx_md5="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-${scx_version/-core/}.md5"
+scx_uri="ftp://ftp.morpheus.net/pub/linux/crux/crux-${scx_version/-core/}/iso/crux-${scx_version/-core/}.iso"
+scx_md5="ftp://ftp.morpheus.net/pub/linux/crux/crux-${scx_version/-core/}/iso/crux-${scx_version/-core/}.md5"
 
 scx-setup() {
     # get current directory
