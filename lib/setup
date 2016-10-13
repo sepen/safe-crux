@@ -68,7 +68,7 @@ scxSetupPrepareTarget() {
     local image_fstype="ext2"
     case "$SCX_SETUP_TYPE" in
         dir)
-            [ ! -d "$target" ] && mkdir -p "$target"
+            [ ! -d "$target" ] && sudo mkdir -p "$target"
             SCX_MNTDIR="$target"
             ;;
         block)
