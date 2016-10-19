@@ -25,7 +25,7 @@ Commands:
   env      Print environment variables
   setup    Run setup to install or update an enviroment
   status   Print status of running environments
-  use      Use existing environment
+  run      Run existing environment
   version  Print version information
   help     Print help and usage information
 

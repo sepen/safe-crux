@@ -18,7 +18,7 @@ Commands:
   env      Print environment variables
   setup    Run setup to install or update an enviroment
   status   Print status of running environments
-  use      Use existing environment
+  run      Run existing environment
   version  Print version information
   help     Print help and usage information
 
@@ -56,7 +56,7 @@ scxHello() {
 +++ b/lib/scx
 @@ -23,6 +23,7 @@ Commands:
    status      Print status of running environments
-   use         Use existing environment
+   run         Run existing environment
    version     Print version information
 +  helloworld  Print helloworld message
    help        Print help and usage information

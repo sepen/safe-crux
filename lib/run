@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-scxUseHelp() {
+scxRunHelp() {
     cat << __EOF__
-Usage: $SCX_APPNAME use TARGET [cmd]
+Usage: $SCX_APPNAME run TARGET [cmd]
 
 Options:
 
@@ -10,14 +10,14 @@ Options:
 
 Examples:
 
-  $SCX_APPNAME use /tmp/crux-x86_64.img
-  $SCX_APPNAME use /tmp/crux-x86_64
-  $SCX_APPNAME use /dev/sdb1 "cat /etc/hosts"
+  $SCX_APPNAME run /tmp/crux-x86_64.img
+  $SCX_APPNAME run /tmp/crux-x86_64
+  $SCX_APPNAME run /dev/sdb1 "cat /etc/hosts"
 __EOF__
     exit 0
 }
 
-scxUsePrepareTarget() {
+scxRunPrepareTarget() {
     local target="$1"
     local target_type="$(getTargetType $target)"
     SCX_MNTDIR="$(getMountDir $target)"
@@ -37,13 +37,13 @@ scxUsePrepareTarget() {
             fi
             ;;
         *)
-            scxUseHelp
+            scxRunHelp
             ;;
     esac
     printf "%-10s %s\n" $$ $SCX_MNTDIR | sudo tee -a $SCX_RUNFILE >/dev/null
 }
 
-scxUseLeaveTarget() {
+scxRunLeaveTarget() {
     sudo umount $SCX_MNTDIR >/dev/null 2>&1
     sudo sed "/^$$ /d" -i $SCX_RUNFILE
     # cleanup old entries
@@ -52,13 +52,13 @@ scxUseLeaveTarget() {
     done < $SCX_RUNFILE
 }
 
-scxUse() {
+scxRun() {
     local cmd_chroot="$SCX_BINDIR/chrooted"
     #cmd_chroot="setarch ARCH $SCX_BINDIR/chrooted"
     local target=
-    [ $# -eq 0 ] || [ "$1" = "-h" ] && scxUseHelp
+    [ $# -eq 0 ] || [ "$1" = "-h" ] && scxRunHelp
     target="$(getTarget $1)"
-    scxUsePrepareTarget "$target"
+    scxRunPrepareTarget "$target"
     # chroot the mount point
     if [ $# -gt 1 ]; then
         # pass user commands to the environment
@@ -67,5 +67,5 @@ scxUse() {
     else
         sudo $cmd_chroot $SCX_MNTDIR $SCX_CHROOTSHELL
     fi
-    scxUseLeaveTarget
+    scxRunLeaveTarget
 }
