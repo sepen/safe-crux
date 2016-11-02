@@ -1,6 +1,25 @@
 
 # SCX - Safe CRUX
 
+
+## What is Safe CRUX?
+
+`Safe CRUX` is a system containers solution like [LxC](https://linuxcontainers.org)
+and [Docker](https://www.docker.com) but focused on [CRUX Linux distribution](https://crux.nu) and keeping in mind the KISS principle.  
+  
+Our goal is to provide a environment to isolate applications and entire
+operating system containers from the other processes that are running.
+
+
+## Installation
+
+```console
+git clone https://github.com/sepen/safe-crux
+cd safe-crux
+sudo ./install.sh
+```
+
+
 ## Usage
 
 ```
@@ -26,51 +45,67 @@ Run 'safe-crux COMMAND -h' or 'safe-crux help COMMAND' for info on a command
 ```
 
 
-## Developers
+## Customization
 
-### Create new commands
+### Create a new command: scx hello
 
-To create a new command for safe-crux. For example 'helloworld' these are the steps:
+First create the main file (lib/hello) and put on it two mandatory functions:
+`scxHello` and `scxHelloHelp` which are required to call the new command and show
+a help message. You should use lowerCamelCase for naming convention.
 
-* Create a new file (lib/helloworld) with at least some required functions:
-```
+```bash
 #!/usr/bin/env bash
 
 scxHelloHelp() {
-  cat << __EOF__
-Usage: $SCX_APPNAME helloworld
-__EOF__
-  exit 0
-}
+  echo "$SCX_APPNAME hello"
 
 scxHello() {
-  # do whatever the command does, for example: echo 'helloworld'
-  echo 'helloworld'
-  exit 0
+  echo 'hello'
 }
 ```
 
-* Then you should update scxHelp function in main library (lib/scx):
-```
+Then register your function into the main SCX library (lib/scx):
+
+```diff
 --- a/lib/scx
 +++ b/lib/scx
 @@ -23,6 +23,7 @@ Commands:
    status      Print status of running environments
    run         Run existing environment
    version     Print version information
-+  helloworld  Print helloworld message
++  hello       Print hello message
    help        Print help and usage information
  
  Run '$SCX_APPNAME COMMAND -h' or '$SCX_APPNAME help COMMAND' for info on a command
 ```
 
-* In addition it would be good that you create a pull request or send that patch to me
+You can add more functions by keeping the same prefix scxHello:
+
+```bash
+scxHelloFoo() {
+  echo 'hello foo'
+}
+
+scxHelloFooTwoTimes() {
+  scxHelloFoo
+  scxHelloFoo
+}
+```
 
 
-### Functions
+### Environment variables
 
-Functions starting with 'scx' prefix are reserved for commands and should not be used in other functions.  
-Shared functions are defined in the main library (lib/scx). Here is a list of functions that can be used:
+You can use these variables from the code. To get a list:
+
+```console
+scx env
+```
+
+
+### Shared functions
+
+Shared functions are defined in the main library (lib/scx). Here is a list of
+functions that can be used:
 * getTarget
 * getTargetType
 * getMountDir
