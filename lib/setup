@@ -16,9 +16,9 @@ Options:
 
 Examples:
 
-  $SCX_APPNAME setup -t file  x86_64-3.2 /tmp/crux-x86_64.img
-  $SCX_APPNAME setup -t dir   x86_64-3.2 /tmp/crux-x86_64
-  $SCX_APPNAME setup -t block x86_64-3.2 /dev/sdb1
+  $SCX_APPNAME setup -t file  x86_64-3.3 /tmp/crux-x86_64.img
+  $SCX_APPNAME setup -t dir   x86_64-3.3 /tmp/crux-x86_64
+  $SCX_APPNAME setup -t block x86_64-3.3 /dev/sdb1
 __EOF__
     exit 0
 }
