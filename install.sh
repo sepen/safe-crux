@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-[ -z $DESTDIR ] && export DESTDIR=
-[ -z $PREFIX ]  && export PREFIX=/usr/local
+[ -z $DESTDIR ] && export DESTDIR=
+[ -z $PREFIX ]  && export PREFIX=/usr/local
 [ -z $BINDIR ]  && export BINDIR=${PREFIX}/bin
 [ -z $DATADIR ] && export DATADIR=${PREFIX}/scx
 
