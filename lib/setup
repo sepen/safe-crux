@@ -24,7 +24,7 @@ __EOF__
 }
 
 scxSetupList() {
-    find "$SCX_SCXDIR" -maxdepth 1 -mindepth 1 -exec basename {} \;
+    find "$SCX_SCXDIR" -maxdepth 1 -mindepth 1 -exec basename {} \; | sort -n
     exit 0
 }
 
