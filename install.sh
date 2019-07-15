@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-[ -z $DESTDIR ] && export DESTDIR=
-[ -z $PREFIX ]  && export PREFIX=/usr/local
-[ -z $BINDIR ]  && export BINDIR=${PREFIX}/bin
-[ -z $DATADIR ] && export DATADIR=${PREFIX}/scx
+readonly DESTDIR=${DESTDIR}
+readonly PREFIX=${PREFIX:-/usr/local}
+readonly BINDIR=${PREFIX}/bin
+readonly DATADIR=${PREFIX}/scx
 
 install -v -d ${DESTDIR}${BINDIR}
 sed "s|BASEDIR=.*|BASEDIR=${DATADIR}|" safe-crux.wrapper.in > ${DESTDIR}${BINDIR}/safe-crux
