@@ -13,20 +13,12 @@ operating system containers from the other processes that are running.
 `Safe CRUX` is also a way to test CRUX within another Linux distribution in an easy and fast way.
 
 
-## Use cases
-
-### Keep my CRUX partition at office while I work on Ubuntu
-
-For reasons of my work, my laptop has Ubuntu installed. I also have CRUX installed, but in most cases I can not restart the laptop to start CRUX
-and then restart it for Ubuntu and continue working, so most of the time I remain in Ubuntu.
-As in my setup, CRUX resides in a disk partition, with `Safe CRUX` I can continue updating packages to my system without having to restart.
-
-
 ## Getting started
 
 ```console
 git clone https://github.com/sepen/safe-crux
 cd safe-crux
+./safe-crux help
 ```
 
 If you want to install it in the system:
@@ -63,6 +55,25 @@ Commands:
 
 Run 'safe-crux COMMAND -h' or 'safe-crux help COMMAND' for info on a command
 ```
+
+
+## Use cases
+
+### Keep my CRUX partition at office while I work on Ubuntu
+
+For reasons of my work, my laptop has Ubuntu installed. I also have CRUX installed, but in most cases I can not restart the laptop to start CRUX
+and then restart it for Ubuntu and continue working, so most of the time I remain in Ubuntu.
+As in my setup, CRUX resides in a disk partition, with `Safe CRUX` I can continue updating packages to my system without having to restart.
+
+Every day I usually do the following actions to keep my partition (/dev/sda6) with CRUX updated:
+
+```console
+scx run /dev/sda6 "ports -u"
+scx run /dev/sda6 "prt-get sysup"
+```
+
+With this I make sure that the next time I start CRUX I will have fewer packages to compile.
+
 
 ## Contribute to development
 
