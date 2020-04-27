@@ -16,9 +16,9 @@ Options:
 
 Examples:
 
-  $SCX_APPNAME setup -t file  x86_64-3.3 /tmp/crux-x86_64.img
-  $SCX_APPNAME setup -t dir   x86_64-3.3 /tmp/crux-x86_64
-  $SCX_APPNAME setup -t block x86_64-3.3 /dev/sdb1
+  $SCX_APPNAME setup -t file  x86_64-3.5 /tmp/crux-x86_64.img
+  $SCX_APPNAME setup -t dir   x86_64-3.5 /tmp/crux-x86_64
+  $SCX_APPNAME setup -t block x86_64-3.5 /dev/sdb1
 __EOF__
     exit 0
 }
@@ -36,24 +36,29 @@ scxSetupLoadVersion() {
 }
 
 scxSetupPrepareIso() {
-    local cmd_wget="wget -nv -c -t 3 --waitretry=3 -P $SCX_ISODIR"
+    local cmd_wget="wget -c -t 3 --waitretry=3 -P $SCX_ISODIR"
     local cmd_md5sum="md5sum"
     local iso_uri="$1"
     local iso_md5="$2"
     local iso_file="${iso_uri##*/}"
     local iso_md5file="${iso_md5##*/}"
-    # TODO: check if wget command is available or show error
+    # TODO: check if wget command is available
     # download files
     # TODO: refactor to downloadFile function
-    [ ! -f "$SCX_ISODIR/$iso_file" ] && sudo $cmd_wget $iso_uri
-    [ ! -f "$SCX_ISODIR/$iso_md5file" ] && sudo $cmd_wget $iso_md5
+    if [ ! -f "$SCX_ISODIR/$iso_file" ]; then
+      msgInfo "Downloading ISO file from $iso_uri"
+      $cmd_wget $iso_uri
+    fi
+    if [ ! -f "$SCX_ISODIR/$iso_md5file" ]; then
+      msgInfo "Downloading MD5 file from $iso_md5"
+      $cmd_wget $iso_md5
+    fi
     [ ! -f "$SCX_ISODIR/$iso_file" ] && exit 1
     [ ! -f "$SCX_ISODIR/$iso_md5file" ] && exit 1
     # check md5sum
-    # TODO: check if md5sum matches or show error
-    cd $SCX_ISODIR && sudo md5sum -c "$iso_md5file"
+    cd $SCX_ISODIR && md5sum -c "$iso_md5file" || exit 1
     # mount iso
-    sudo mkdir -p $SCX_ISODIR/mnt
+    mkdir -p $SCX_ISODIR/mnt
     sudo mount -o loop,ro -t iso9660 $SCX_ISODIR/$iso_file $SCX_ISODIR/mnt
 }
 
@@ -68,7 +73,7 @@ scxSetupPrepareTarget() {
     local image_fstype="ext2"
     case "$SCX_SETUP_TYPE" in
         dir)
-            [ ! -d "$target" ] && sudo mkdir -p "$target"
+            [ ! -d "$target" ] && mkdir -p "$target"
             SCX_MNTDIR="$target"
             ;;
         block)
@@ -117,11 +122,13 @@ scxSetup() {
     scxSetupPrepareIso "$scx_uri" "$scx_md5"
     scxSetupPrepareTarget "$setup_target"
     if [ $SCX_SETUP_YES -eq 0 ]; then
-      read -p "You will setup $setup_version on $SCX_MNTDIR [y|n]? " response
+      echo "You will setup $setup_version on $SCX_MNTDIR"
+      read -p "Continue? [y|N] " response
       [ "$response" != "y" ] && exit 0
     fi
     cd $tmpdir
     msgInfo "Running setup: $setup_target $setup_version"
+    msgInfo "Please wait ..."
     scx-setup
     sudo rm -rf $tmpdir
     scxSetupLeaveIso
