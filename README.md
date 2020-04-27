@@ -1,17 +1,17 @@
 
-# SCX - Safe CRUX
+# safe-crux
 
 
-## What is Safe CRUX?
+## What is safe-crux?
 
-`Safe CRUX` IS NOT another system containers solution like [LxC](https://linuxcontainers.org)
+`safe-crux` IS NOT another system containers solution like [LxC](https://linuxcontainers.org)
 and [Docker](https://www.docker.com). This is focused on [CRUX Linux distribution](https://crux.nu) and keeping in mind the KISS principle.
 
 The goal is to provide an easy way to install CRUX or upgrade an existing installation without
 the need to use a bootable medium for it.
-`Safe CRUX` can work directly with partitions, mount points, directories and image files.
+It can work directly with partitions, mount points, directories and image files.
 
-`Safe CRUX` is also a way to test CRUX within another Linux distribution in an easy and fast way.
+Is also a way to test CRUX within another Linux distribution in an easy and fast way.
 
 ## Demo
 
