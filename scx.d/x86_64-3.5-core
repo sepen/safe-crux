@@ -1,11 +1,11 @@
-# CRUX 3.2 x86_64
-# https://crux.nu/Main/ReleaseNotes3-2
-# https://crux.nu/Main/Handbook3-2
+# CRUX 3.5 x86_64
+# https://crux.nu/Main/ReleaseNotes3-5
+# https://crux.nu/Main/Handbook3-5
 
 scx_arch="x86_64"
-scx_version="3.2-core"
-scx_uri="http://ftp.morpheus.net/pub/linux/crux/crux-${scx_version/-core/}/iso/crux-${scx_version/-core/}.iso"
-scx_md5="http://ftp.morpheus.net/pub/linux/crux/crux-${scx_version/-core/}/iso/crux-${scx_version/-core/}.md5"
+scx_version="3.5-updated-core"
+scx_uri="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-$scx_version.iso"
+scx_md5="ftp://ftp.morpheus.net/pub/linux/crux/crux-$scx_version/iso/crux-$scx_version.md5"
 
 scx-setup() {
     # get current directory
@@ -24,7 +24,7 @@ scx-setup() {
       sudo rm -rf $SCX_MNTDIR/var/lib/pkg/rejected
     fi
 
-    # install packages
+    # install core packages
     for pkg in $(find $SCX_ISODIR/mnt/crux/core -type f -name '*.pkg.tar.*'); do
       sudo $(pwd)/usr/bin/pkgadd -r $SCX_MNTDIR $pkg
     done
