@@ -4,7 +4,7 @@
 #
 
 msgUsage() {
-  echo "Usage: $0 path <command>"
+  echo "Usage: $0 path <option> [command(s)]"
   echo "Note that default command executed is /bin/sh"
   exit 0
 }
@@ -15,6 +15,10 @@ msgError() {
 }
 
 main() {
+  local arch=64
+  case $1 in
+    -32) arch=32; shift ;;
+  esac
   # mount subdirs proc,dev,sys,tmp before chroot
   for FS in dev proc sys tmp dev/pts; do
     if ! mountpoint -q $CHROOTFS/$FS; then
@@ -26,7 +30,10 @@ main() {
     fi
   done
   # chroot
-  chroot $CHROOTFS $@
+  case $arch in
+    32) linux32 chroot $CHROOTFS $@ ;;
+    *) chroot $CHROOTFS $@ ;;
+  esac
   # check for other running sessions for the same CHROOTFS
   COUNT=$(fuser $CHROOTFS 2>/dev/null | wc -w)
   if [ $COUNT -eq 0 ]; then
