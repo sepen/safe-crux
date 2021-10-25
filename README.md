@@ -57,14 +57,3 @@ Commands:
 
 Run 'safe-crux COMMAND -h' or 'safe-crux help COMMAND' for info on a command
 ```
-
-
-## Use cases
-
-At work I need to run Ubuntu, therefore it is very useful for me to be able to use CRUX that runs on another partition.
-
-I usually do the following actions to keep my CRUX installation up to date:
-
-```console
-scx run /dev/sda6 "ports -u && prt-get sysup"
-```
