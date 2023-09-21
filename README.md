@@ -7,6 +7,11 @@
 `safe-crux` (aka `scx`) IS NOT another system containers solution like [LxC](https://linuxcontainers.org)
 and [Docker](https://www.docker.com). This is only focused on [CRUX Linux](https://crux.nu) and keeping in mind the KISS principle.
 
+![Last Commit](https://img.shields.io/github/last-commit/sepen/safe-crux)
+![Repo Size](https://img.shields.io/github/repo-size/sepen/safe-crux)
+![Code Size](https://img.shields.io/github/languages/code-size/sepen/safe-crux)
+![Proudly Written in Bash](https://img.shields.io/badge/written%20in-bash-ff69b4)
+
 The goal is to provide an easy way to install CRUX Linux or upgrade an existing installation without
 the need to use a bootable medium for it.
 
